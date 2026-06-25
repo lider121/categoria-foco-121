@@ -41,6 +41,10 @@ Los permisos por rol todavía no están implementados; el punto de control para 
 
 La sección de historial incluye exportación CSV compatible con Excel. Permite descargar todos los registros, los últimos 7 días o el mes actual, usando datos reales de Firestore y columnas para fecha, responsable, turno, 11 categorías, promedio y observaciones.
 
+## Versión 1.4
+
+Se agrega selector temporal de rol: Usuario, Supervisor y Administrador. Usuario puede crear, consultar, generar WhatsApp y exportar, pero no editar. Supervisor y Administrador pueden editar registros existentes. El permiso futuro de eliminación queda preparado para Administrador, sin implementar login todavía.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

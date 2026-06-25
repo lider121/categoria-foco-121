@@ -74,6 +74,18 @@
           Editando registro existente
         </div>
 
+        <div class="role-box">
+          <label>
+            Rol temporal
+            <select id="roleSelect">
+              <option value="user">Usuario</option>
+              <option value="supervisor">Supervisor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </label>
+          <p id="roleNotice">Solo supervisor o administrador puede editar registros.</p>
+        </div>
+
         <form id="evaluationForm" novalidate>
           <div class="form-grid">
             <label>

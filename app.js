@@ -52,6 +52,8 @@ const elements = {
   observationsInput: document.querySelector("#observationsInput"),
   openWhatsappLink: document.querySelector("#openWhatsappLink"),
   refreshButton: document.querySelector("#refreshButton"),
+  roleNotice: document.querySelector("#roleNotice"),
+  roleSelect: document.querySelector("#roleSelect"),
   saveButton: document.querySelector("#saveButton"),
   shiftSelect: document.querySelector("#shiftSelect"),
   whatsappButton: document.querySelector("#whatsappButton"),
@@ -74,6 +76,7 @@ function init() {
   elements.dateInput.value = getToday();
   bindEvents();
   connectFirebase();
+  updateRoleUi();
   updateComputedState();
 }
 
@@ -85,6 +88,7 @@ function bindEvents() {
   elements.cancelEditButton.addEventListener("click", cancelEditing);
   elements.exportButton.addEventListener("click", exportRecords);
   elements.refreshButton.addEventListener("click", refreshSummary);
+  elements.roleSelect.addEventListener("change", handleRoleChange);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
 }
@@ -156,6 +160,39 @@ function handleNameChange() {
   elements.customNameInput.required = isOther;
 }
 
+function handleRoleChange() {
+  if (!canEditRecords() && editingRecordDate) {
+    cancelEditing();
+  }
+  updateRoleUi();
+}
+
+function getCurrentRole() {
+  return elements.roleSelect.value;
+}
+
+function canEditRecords() {
+  return ["supervisor", "admin"].includes(getCurrentRole());
+}
+
+function canDeleteRecords() {
+  return getCurrentRole() === "admin";
+}
+
+function assertFutureDeletePermission() {
+  // Futuro v1.x: antes de eliminar registros, exigir canDeleteRecords() y autenticación real de administrador.
+  return canDeleteRecords();
+}
+
+function updateRoleUi() {
+  const canEdit = canEditRecords();
+  elements.roleNotice.classList.toggle("hidden", canEdit);
+  elements.historyList.querySelectorAll("[data-edit-date]").forEach((button) => {
+    button.disabled = !canEdit;
+    button.title = canEdit ? "Abrir registro para editar" : "Solo supervisor o administrador puede editar registros";
+  });
+}
+
 async function loadRecordForDate(fecha) {
   try {
     const record = await getRecordByDate(fecha);
@@ -211,6 +248,7 @@ async function loadHistory() {
         startEditingRecord(button.dataset.editDate);
       });
     });
+    updateRoleUi();
   } catch (error) {
     console.error(error);
     elements.historyList.innerHTML = `<p class="form-message">No se pudo cargar el historial: ${escapeHtml(getFirestoreErrorMessage(error))}</p>`;
@@ -224,6 +262,10 @@ async function refreshSummary() {
 
 async function startEditingRecord(fecha) {
   if (!db) return;
+  if (!canEditRecords()) {
+    setMessage("Solo supervisor o administrador puede editar registros.");
+    return;
+  }
 
   try {
     const record = await getRecordByDate(fecha);
@@ -623,6 +665,7 @@ function renderHistoryItem(record) {
   const date = escapeHtml(formatDate(record.fecha));
   const nombre = escapeHtml(record.nombre || "Sin nombre");
   const turno = escapeHtml(record.turno || "Sin turno");
+  const disabled = canEditRecords() ? "" : " disabled";
   return `
     <article class="history-item">
       <div class="history-row">
@@ -630,7 +673,7 @@ function renderHistoryItem(record) {
           <span>${date}<br />${nombre} · ${turno}</span>
           <strong>${formatPercent(record.promedio)}</strong>
         </div>
-        <button class="history-edit-button" type="button" data-edit-date="${escapeHtml(record.fecha)}">Ver / Editar</button>
+        <button class="history-edit-button" type="button" data-edit-date="${escapeHtml(record.fecha)}"${disabled}>Ver / Editar</button>
       </div>
     </article>
   `;
