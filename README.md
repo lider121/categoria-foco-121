@@ -23,6 +23,14 @@ El botón `Generar WhatsApp` lee el registro guardado de la fecha seleccionada y
 
 Si el día anterior no tiene registro, el mensaje muestra `Sin comparación disponible`.
 
+## Versión 1.1
+
+La pantalla inicial incluye un dashboard superior con el promedio del último registro, variación vs día anterior, semáforo de categorías verdes/amarillas/rojas, Top 3 críticas y fecha del último registro. Las categorías también se colorean automáticamente en el formulario:
+
+- Verde: `>= 80`
+- Amarillo: `60` a `79.9`
+- Rojo: `< 60`
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

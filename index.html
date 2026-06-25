@@ -19,6 +19,47 @@
       </div>
     </header>
 
+    <section class="dashboard-panel" aria-labelledby="dashboardTitle">
+      <div class="section-heading dashboard-heading">
+        <div>
+          <p class="eyebrow">Resumen actual</p>
+          <h2 id="dashboardTitle">Dashboard</h2>
+        </div>
+        <span id="dashboardDate" class="dashboard-date">Sin registros</span>
+      </div>
+
+      <div class="dashboard-grid">
+        <article class="dashboard-card hero-metric">
+          <span>Promedio más reciente</span>
+          <strong id="dashboardAverage">0%</strong>
+          <small id="dashboardDelta">Sin dato</small>
+        </article>
+
+        <article class="dashboard-card">
+          <span>Semáforo categorías</span>
+          <div class="traffic-grid">
+            <div class="traffic-item green">
+              <strong id="greenCount">0</strong>
+              <small>Verdes</small>
+            </div>
+            <div class="traffic-item yellow">
+              <strong id="yellowCount">0</strong>
+              <small>Amarillas</small>
+            </div>
+            <div class="traffic-item red">
+              <strong id="redCount">0</strong>
+              <small>Rojas</small>
+            </div>
+          </div>
+        </article>
+
+        <article class="dashboard-card critical-dashboard">
+          <span>Top 3 críticas</span>
+          <ol id="dashboardCriticalList"></ol>
+        </article>
+      </div>
+    </section>
+
     <main class="app-shell">
       <section class="panel form-panel" aria-labelledby="dailyTitle">
         <div class="section-heading">

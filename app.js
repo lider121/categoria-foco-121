@@ -30,6 +30,11 @@ const elements = {
   connectionStatus: document.querySelector("#connectionStatus"),
   copyButton: document.querySelector("#copyButton"),
   criticalList: document.querySelector("#criticalList"),
+  dashboardAverage: document.querySelector("#dashboardAverage"),
+  dashboardCriticalList: document.querySelector("#dashboardCriticalList"),
+  dashboardDate: document.querySelector("#dashboardDate"),
+  dashboardDelta: document.querySelector("#dashboardDelta"),
+  greenCount: document.querySelector("#greenCount"),
   customNameInput: document.querySelector("#customNameInput"),
   customNameWrap: document.querySelector("#customNameWrap"),
   dateInput: document.querySelector("#dateInput"),
@@ -45,7 +50,9 @@ const elements = {
   shiftSelect: document.querySelector("#shiftSelect"),
   whatsappButton: document.querySelector("#whatsappButton"),
   whatsappDialog: document.querySelector("#whatsappDialog"),
-  whatsappText: document.querySelector("#whatsappText")
+  whatsappText: document.querySelector("#whatsappText"),
+  redCount: document.querySelector("#redCount"),
+  yellowCount: document.querySelector("#yellowCount")
 };
 
 let db = null;
@@ -68,7 +75,7 @@ function bindEvents() {
   elements.form.addEventListener("submit", saveRecord);
   elements.nameSelect.addEventListener("change", handleNameChange);
   elements.dateInput.addEventListener("change", handleDateChange);
-  elements.refreshButton.addEventListener("click", loadHistory);
+  elements.refreshButton.addEventListener("click", refreshSummary);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
 }
@@ -78,7 +85,7 @@ function renderCategoryInputs() {
     .map((category) => {
       const id = `cat-${category.code}`;
       return `
-        <label class="category-card" for="${id}">
+        <label id="card-${category.code}" class="category-card" for="${id}">
           <span class="category-name">
             <span class="category-code">${category.code}</span>
             ${category.name}
@@ -97,6 +104,7 @@ async function connectFirebase() {
     setStatus("Firebase prueba", "ready");
     await handleDateChange();
     await loadHistory();
+    await loadDashboard();
     return;
   }
 
@@ -109,6 +117,7 @@ async function connectFirebase() {
     setStatus("Firebase conectado", "ready");
     await handleDateChange();
     await loadHistory();
+    await loadDashboard();
   } catch (error) {
     console.error(error);
     setStatus("Error Firebase", "error");
@@ -197,6 +206,62 @@ async function loadHistory() {
   }
 }
 
+async function refreshSummary() {
+  await loadHistory();
+  await loadDashboard();
+}
+
+async function loadDashboard() {
+  if (!db) return;
+
+  try {
+    const latestQuery = firestoreApi.query(
+      firestoreApi.collection(db, COLLECTION_NAME),
+      firestoreApi.orderBy("fecha", "desc"),
+      firestoreApi.limit(1)
+    );
+    const snapshot = await firestoreApi.getDocs(latestQuery);
+
+    if (snapshot.empty) {
+      renderDashboard(null, null);
+      return;
+    }
+
+    const latestRecord = normalizeRecord(snapshot.docs[0].data());
+    const previous = await getRecordByDate(getPreviousDate(latestRecord.fecha));
+    renderDashboard(latestRecord, previous);
+  } catch (error) {
+    console.error(error);
+    renderDashboard(null, null);
+  }
+}
+
+function renderDashboard(record, previous) {
+  if (!record) {
+    elements.dashboardAverage.textContent = "0%";
+    elements.dashboardDelta.textContent = "Sin dato";
+    elements.dashboardDate.textContent = "Sin registros";
+    elements.greenCount.textContent = "0";
+    elements.yellowCount.textContent = "0";
+    elements.redCount.textContent = "0";
+    elements.dashboardCriticalList.innerHTML = "<li>Sin datos</li>";
+    return;
+  }
+
+  const counts = getStatusCounts(record.categorias);
+  const critical = getCriticalCategories(record.categorias);
+
+  elements.dashboardAverage.textContent = formatPercent(record.promedio);
+  elements.dashboardDelta.textContent = previous ? formatDelta(record.promedio - previous.promedio) : "Sin dato";
+  elements.dashboardDate.textContent = `Último registro: ${formatDate(record.fecha)}`;
+  elements.greenCount.textContent = String(counts.green);
+  elements.yellowCount.textContent = String(counts.yellow);
+  elements.redCount.textContent = String(counts.red);
+  elements.dashboardCriticalList.innerHTML = critical
+    .map((category) => `<li>${escapeHtml(category.nombre)} (${formatPercent(category.valor)})</li>`)
+    .join("");
+}
+
 async function saveRecord(event) {
   event.preventDefault();
 
@@ -227,6 +292,7 @@ async function saveRecord(event) {
     setMessage("Registro guardado correctamente");
     await loadPreviousRecord(record.fecha);
     await loadHistory();
+    await loadDashboard();
     updateComputedState();
   } catch (error) {
     console.error(error);
@@ -308,6 +374,7 @@ function updateComputedState() {
   elements.formAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
   elements.headerAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
   elements.averageDelta.textContent = previousAverage !== undefined ? formatDelta(average - previousAverage) : "Sin dato";
+  updateCategoryColors(values);
   renderCriticalList(values);
 }
 
@@ -318,6 +385,37 @@ function renderCriticalList(values) {
   elements.criticalList.innerHTML = critical.length
     ? critical.map((item) => `<li>${item.codigo} ${item.nombre}: ${formatPercent(item.valor)}</li>`).join("")
     : "<li>Sin datos</li>";
+}
+
+function updateCategoryColors(values) {
+  values.forEach((item) => {
+    const card = document.querySelector(`#card-${item.codigo}`);
+    if (!card) return;
+
+    card.classList.remove("status-green", "status-yellow", "status-red");
+    if (Number.isNaN(item.valor)) return;
+    card.classList.add(`status-${getCategoryStatus(item.valor)}`);
+  });
+}
+
+function getStatusCounts(values) {
+  return values.reduce(
+    (counts, item) => {
+      counts[getCategoryStatus(item.valor)] += 1;
+      return counts;
+    },
+    { green: 0, yellow: 0, red: 0 }
+  );
+}
+
+function getCriticalCategories(values) {
+  return values.slice().sort((a, b) => a.valor - b.valor).slice(0, 3);
+}
+
+function getCategoryStatus(value) {
+  if (value >= 80) return "green";
+  if (value >= 60) return "yellow";
+  return "red";
 }
 
 function fillForm(record) {
