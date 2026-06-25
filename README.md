@@ -91,7 +91,7 @@ Publica la rama principal desde Settings > Pages. Como es HTML, CSS y JavaScript
 
 Para pruebas internas puedes usar reglas abiertas temporalmente. Ajústalas antes de usar la app en producción.
 
-La eliminación controlada requiere permiso en `registros` y también en `deletedLogs`, porque primero se guarda el respaldo y después se borra el documento original.
+La eliminación controlada requiere permiso en `registros` y también en `deletedLogs`, porque primero se guarda el respaldo y después se borra el documento original. Como los roles actuales son temporales y todavía no hay login, `deletedLogs` valida el campo `deletedRole` enviado por la app.
 
 ```txt
 rules_version = '2';
@@ -100,8 +100,19 @@ service cloud.firestore {
     match /registros/{document} {
       allow read, write: if true;
     }
-    match /deletedLogs/{document} {
+
+    match /roles/{document} {
       allow read, write: if true;
+    }
+
+    match /deletedLogs/{document} {
+      allow read: if true;
+      allow create: if request.resource.data.deletedRole == "admin"
+        && request.resource.data.documentId is string
+        && request.resource.data.deletedBy is string
+        && request.resource.data.deletedData is map
+        && request.resource.data.deletedAt == request.time;
+      allow update, delete: if false;
     }
   }
 }

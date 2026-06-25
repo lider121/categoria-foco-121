@@ -423,6 +423,7 @@ async function saveDeletedLog(documentId, deletedData) {
     documentId,
     deletedData,
     deletedBy: getActorName(),
+    deletedRole: getCurrentRole(),
     deletedAt: firestoreApi.serverTimestamp()
   });
 }
