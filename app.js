@@ -368,16 +368,9 @@ async function showWhatsappMessage() {
     return;
   }
 
-  const whatsappWindow = window.open("", "_blank");
-  if (whatsappWindow) {
-    whatsappWindow.opener = null;
-    whatsappWindow.document.write("Generando mensaje de WhatsApp...");
-  }
-
   try {
     const record = await getRecordByDate(fecha);
     if (!record) {
-      whatsappWindow?.close();
       setMessage("No existe un registro guardado para la fecha seleccionada.");
       return;
     }
@@ -388,15 +381,13 @@ async function showWhatsappMessage() {
 
     elements.whatsappText.value = message;
     elements.openWhatsappLink.href = whatsappUrl;
-    setMessage("Mensaje WhatsApp generado correctamente.");
+    const copied = await copyTextToClipboard(message);
+    setMessage(copied ? "Mensaje WhatsApp generado correctamente y copiado al portapapeles." : "Mensaje WhatsApp generado correctamente. Usa Copiar mensaje si WhatsApp no pega el texto.");
     elements.whatsappDialog.showModal();
-    if (whatsappWindow) {
-      whatsappWindow.location.href = whatsappUrl;
-    } else {
+    setTimeout(() => {
       window.open(whatsappUrl, "_blank", "noopener");
-    }
+    }, 650);
   } catch (error) {
-    whatsappWindow?.close();
     console.error(error);
     setMessage(`No se pudo generar WhatsApp: ${getFirestoreErrorMessage(error)}`);
   }
@@ -441,11 +432,42 @@ function buildWhatsappMessage(record, previous) {
 }
 
 async function copyWhatsappMessage() {
-  await navigator.clipboard.writeText(elements.whatsappText.value);
+  await copyTextToClipboard(elements.whatsappText.value);
   elements.copyButton.textContent = "Copiado";
   setTimeout(() => {
-    elements.copyButton.textContent = "Copiar";
+    elements.copyButton.textContent = "Copiar mensaje";
   }, 1400);
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (error) {
+    console.warn("No se pudo copiar automáticamente el mensaje.", error);
+  }
+  return copyTextWithFallback(text);
+}
+
+function copyTextWithFallback(text) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.top = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } catch (error) {
+    console.warn("No se pudo copiar el mensaje con el método alternativo.", error);
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
 }
 
 function normalizeRecord(record) {
