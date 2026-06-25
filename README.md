@@ -57,6 +57,8 @@ Antes de eliminar un documento de `registros`, la app guarda una copia completa 
 
 La exportación conserva el CSV compatible con Excel y agrega descarga JSON usando el mismo rango seleccionado: todos los registros, últimos 7 días o mes actual.
 
+Importante: para que `Eliminar` funcione, Firestore debe permitir escritura en `deletedLogs`. Si esa regla falta, la app mostrará un mensaje específico y mantendrá el registro original sin borrar.
+
 ## Versión 1.7
 
 El historial incorpora búsqueda en tiempo real y filtros combinables por fecha desde/hasta, usuario creador y categoría. El contador de resultados se actualiza automáticamente y el botón `Limpiar filtros` vuelve a mostrar el lote completo consultado.
@@ -88,6 +90,8 @@ Publica la rama principal desde Settings > Pages. Como es HTML, CSS y JavaScript
 ## Reglas Firestore de prueba
 
 Para pruebas internas puedes usar reglas abiertas temporalmente. Ajústalas antes de usar la app en producción.
+
+La eliminación controlada requiere permiso en `registros` y también en `deletedLogs`, porque primero se guarda el respaldo y después se borra el documento original.
 
 ```txt
 rules_version = '2';

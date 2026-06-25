@@ -377,7 +377,14 @@ async function deleteRecord(fecha) {
       return;
     }
 
-    await saveDeletedLog(fecha, snapshot.data());
+    try {
+      await saveDeletedLog(fecha, snapshot.data());
+    } catch (backupError) {
+      console.error(backupError);
+      setMessage(getDeletedLogPermissionMessage(backupError));
+      return;
+    }
+
     await firestoreApi.deleteDoc(recordRef);
 
     if (editingRecordDate === fecha) {
@@ -398,6 +405,14 @@ async function deleteRecord(fecha) {
     console.error(error);
     setMessage(`No se pudo eliminar el registro: ${getFirestoreErrorMessage(error)}`);
   }
+}
+
+function getDeletedLogPermissionMessage(error) {
+  if (error?.code === "permission-denied") {
+    return "No se eliminó el registro: falta permiso de escritura en Firestore para la colección deletedLogs. Agrega la regla indicada en README y vuelve a intentar.";
+  }
+
+  return `No se eliminó el registro porque no se pudo crear el respaldo en deletedLogs: ${getFirestoreErrorMessage(error)}`;
 }
 
 async function saveDeletedLog(documentId, deletedData) {
