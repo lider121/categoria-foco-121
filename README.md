@@ -37,6 +37,10 @@ El historial permite abrir registros existentes con `Ver / Editar`. En modo edic
 
 Los permisos por rol todavía no están implementados; el punto de control para admin/supervisor queda comentado en `app.js`.
 
+## Versión 1.3
+
+La sección de historial incluye exportación CSV compatible con Excel. Permite descargar todos los registros, los últimos 7 días o el mes actual, usando datos reales de Firestore y columnas para fecha, responsable, turno, 11 categorías, promedio y observaciones.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

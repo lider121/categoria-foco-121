@@ -40,6 +40,8 @@ const elements = {
   customNameWrap: document.querySelector("#customNameWrap"),
   dateInput: document.querySelector("#dateInput"),
   editStatus: document.querySelector("#editStatus"),
+  exportButton: document.querySelector("#exportButton"),
+  exportRange: document.querySelector("#exportRange"),
   form: document.querySelector("#evaluationForm"),
   formPanel: document.querySelector(".form-panel"),
   formAverage: document.querySelector("#formAverage"),
@@ -81,6 +83,7 @@ function bindEvents() {
   elements.nameSelect.addEventListener("change", handleNameChange);
   elements.dateInput.addEventListener("change", handleDateChange);
   elements.cancelEditButton.addEventListener("click", cancelEditing);
+  elements.exportButton.addEventListener("click", exportRecords);
   elements.refreshButton.addEventListener("click", refreshSummary);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
@@ -308,6 +311,101 @@ function renderDashboard(record, previous) {
   elements.dashboardCriticalList.innerHTML = critical
     .map((category) => `<li>${escapeHtml(category.nombre)} (${formatPercent(category.valor)})</li>`)
     .join("");
+}
+
+async function exportRecords() {
+  if (!db) {
+    setMessage("Configura Firebase antes de exportar.");
+    return;
+  }
+
+  try {
+    const range = elements.exportRange.value;
+    const records = await getRecordsForExport(range);
+
+    if (!records.length) {
+      setMessage("No hay registros para exportar en el rango seleccionado.");
+      return;
+    }
+
+    const csv = buildCsv(records);
+    const filename = `categoria-foco-121-${range}-${getToday()}.csv`;
+    downloadCsv(csv, filename);
+    setMessage(`CSV generado correctamente: ${records.length} registro(s).`);
+  } catch (error) {
+    console.error(error);
+    setMessage(`No se pudo exportar: ${getFirestoreErrorMessage(error)}`);
+  }
+}
+
+async function getRecordsForExport(range) {
+  const exportQuery = firestoreApi.query(
+    firestoreApi.collection(db, COLLECTION_NAME),
+    firestoreApi.orderBy("fecha", "desc")
+  );
+  const snapshot = await firestoreApi.getDocs(exportQuery);
+  const records = snapshot.docs.map((item) => normalizeRecord(item.data()));
+
+  return records
+    .filter((record) => isRecordInExportRange(record, range))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+function isRecordInExportRange(record, range) {
+  if (range === "all") return true;
+
+  const today = getToday();
+  if (range === "last7") {
+    return record.fecha >= addDays(today, -6) && record.fecha <= today;
+  }
+
+  if (range === "month") {
+    return record.fecha.slice(0, 7) === today.slice(0, 7);
+  }
+
+  return true;
+}
+
+function buildCsv(records) {
+  const headers = [
+    "Fecha",
+    "Registrado por",
+    "Turno",
+    ...categories.map((category) => `${category.code} - ${category.name}`),
+    "Promedio",
+    "Observaciones"
+  ];
+
+  const rows = records.map((record) => {
+    const valuesByCode = new Map(record.categorias.map((category) => [category.codigo, category.valor]));
+    return [
+      record.fecha,
+      record.nombre,
+      record.turno,
+      ...categories.map((category) => valuesByCode.get(category.code) ?? ""),
+      record.promedio,
+      record.observaciones
+    ];
+  });
+
+  return [headers, ...rows].map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
+}
+
+function escapeCsvCell(value) {
+  const text = String(value ?? "");
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function downloadCsv(csv, filename) {
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 async function saveRecord(event) {
@@ -703,6 +801,13 @@ function getPreviousDate(fecha) {
   const [year, month, day] = fecha.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(fecha, days) {
+  const [year, month, day] = fecha.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
 

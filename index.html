@@ -156,6 +156,18 @@
           <ol id="criticalList"></ol>
         </div>
 
+        <div class="export-box">
+          <label>
+            Exportar registros
+            <select id="exportRange">
+              <option value="all">Todos los registros</option>
+              <option value="last7">Últimos 7 días</option>
+              <option value="month">Mes actual</option>
+            </select>
+          </label>
+          <button id="exportButton" class="secondary-button" type="button">Exportar</button>
+        </div>
+
         <div id="historyList" class="history-list"></div>
       </aside>
     </main>

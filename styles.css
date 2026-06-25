@@ -478,6 +478,20 @@ textarea {
   font-weight: 700;
 }
 
+.export-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7fafc;
+}
+
+.export-box .secondary-button {
+  width: 100%;
+}
+
 .history-list {
   display: grid;
   gap: 10px;
