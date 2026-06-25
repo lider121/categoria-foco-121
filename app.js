@@ -191,6 +191,9 @@ function updateRoleUi() {
     button.disabled = !canEdit;
     button.title = canEdit ? "Abrir registro para editar" : "Solo supervisor o administrador puede editar registros";
   });
+  elements.historyList.querySelectorAll("[data-delete-date]").forEach((button) => {
+    button.classList.toggle("hidden", !canDeleteRecords());
+  });
 }
 
 async function loadRecordForDate(fecha) {
@@ -248,6 +251,11 @@ async function loadHistory() {
         startEditingRecord(button.dataset.editDate);
       });
     });
+    elements.historyList.querySelectorAll("button[data-delete-date]").forEach((button) => {
+      button.addEventListener("click", () => {
+        deleteRecord(button.dataset.deleteDate);
+      });
+    });
     updateRoleUi();
   } catch (error) {
     console.error(error);
@@ -284,6 +292,39 @@ async function startEditingRecord(fecha) {
   } catch (error) {
     console.error(error);
     setMessage(`No se pudo abrir el registro para edición: ${getFirestoreErrorMessage(error)}`);
+  }
+}
+
+async function deleteRecord(fecha) {
+  if (!db) return;
+  if (!canDeleteRecords()) {
+    setMessage("Solo administrador puede eliminar registros.");
+    return;
+  }
+
+  const confirmed = window.confirm("¿Seguro que deseas eliminar este registro? Esta acción no se puede deshacer.");
+  if (!confirmed) return;
+
+  try {
+    await firestoreApi.deleteDoc(firestoreApi.doc(db, COLLECTION_NAME, buildDocId(fecha)));
+
+    if (editingRecordDate === fecha) {
+      setEditMode(null);
+      clearFormValues(true);
+    }
+
+    if (elements.dateInput.value === fecha) {
+      clearFormValues(true);
+      currentRecord = null;
+      previousRecord = null;
+      updateComputedState();
+    }
+
+    setMessage("Registro eliminado correctamente.");
+    await refreshSummary();
+  } catch (error) {
+    console.error(error);
+    setMessage(`No se pudo eliminar el registro: ${getFirestoreErrorMessage(error)}`);
   }
 }
 
@@ -666,6 +707,7 @@ function renderHistoryItem(record) {
   const nombre = escapeHtml(record.nombre || "Sin nombre");
   const turno = escapeHtml(record.turno || "Sin turno");
   const disabled = canEditRecords() ? "" : " disabled";
+  const deleteHidden = canDeleteRecords() ? "" : " hidden";
   return `
     <article class="history-item">
       <div class="history-row">
@@ -673,7 +715,10 @@ function renderHistoryItem(record) {
           <span>${date}<br />${nombre} · ${turno}</span>
           <strong>${formatPercent(record.promedio)}</strong>
         </div>
-        <button class="history-edit-button" type="button" data-edit-date="${escapeHtml(record.fecha)}"${disabled}>Ver / Editar</button>
+        <div class="history-actions">
+          <button class="history-edit-button" type="button" data-edit-date="${escapeHtml(record.fecha)}"${disabled}>Ver / Editar</button>
+          <button class="history-delete-button${deleteHidden}" type="button" data-delete-date="${escapeHtml(record.fecha)}">Eliminar</button>
+        </div>
       </div>
     </article>
   `;

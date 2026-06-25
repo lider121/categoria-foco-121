@@ -558,6 +558,28 @@ textarea {
   opacity: 0.7;
 }
 
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.history-delete-button {
+  padding: 9px 10px;
+  color: var(--red);
+  background: var(--soft-red);
+  border: 1px solid rgba(192, 57, 43, 0.22);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.history-delete-button:hover {
+  background: #fad8d5;
+}
+
 dialog {
   width: min(720px, calc(100vw - 24px));
   border: 0;
@@ -631,6 +653,14 @@ dialog form {
 
   .history-row {
     grid-template-columns: 1fr;
+  }
+
+  .history-actions {
+    justify-content: stretch;
+  }
+
+  .history-actions button {
+    width: 100%;
   }
 
   .status-badge,

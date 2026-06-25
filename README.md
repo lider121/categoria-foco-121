@@ -45,6 +45,10 @@ La sección de historial incluye exportación CSV compatible con Excel. Permite 
 
 Se agrega selector temporal de rol: Usuario, Supervisor y Administrador. Usuario puede crear, consultar, generar WhatsApp y exportar, pero no editar. Supervisor y Administrador pueden editar registros existentes. El permiso futuro de eliminación queda preparado para Administrador, sin implementar login todavía.
 
+## Versión 1.5
+
+El historial muestra `Eliminar` solo cuando el rol temporal es Administrador. La eliminación pide confirmación, borra el documento correspondiente en Firestore y actualiza historial y dashboard.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.
