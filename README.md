@@ -17,6 +17,12 @@ Campos guardados:
 - `fechaHoraRegistro`
 - `tienda`
 
+## WhatsApp Inteligente
+
+El botón `Generar WhatsApp` lee el registro guardado de la fecha seleccionada y el registro del día calendario anterior desde Firestore. Con esos datos arma el mensaje diario, compara las 11 categorías, calcula la variación del promedio, detecta las 3 categorías críticas y abre WhatsApp con el texto listo para enviar.
+
+Si el día anterior no tiene registro, el mensaje muestra `Sin comparación disponible`.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

@@ -100,12 +100,6 @@ async function connectFirebase() {
     return;
   }
 
-  if (firebaseConfig.projectId.includes("PEGA_AQUI")) {
-    setStatus("Firebase pendiente", "pending");
-    setMessage("Pega la configuración de Firebase en app.js para guardar en Firestore.");
-    return;
-  }
-
   try {
     const firebaseApp = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
     const firebaseFirestore = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
@@ -142,15 +136,15 @@ function handleNameChange() {
 
 async function loadRecordForDate(fecha) {
   try {
-    const snapshot = await firestoreApi.getDoc(firestoreApi.doc(db, COLLECTION_NAME, buildDocId(fecha)));
-    if (!snapshot.exists()) {
+    const record = await getRecordByDate(fecha);
+    if (!record) {
       clearFormValues(true);
       setMessage("");
       return;
     }
 
-    currentRecord = snapshot.data();
-    fillForm(currentRecord);
+    currentRecord = record;
+    fillForm(record);
     setMessage("Ya existe un registro para esta fecha. No se creará un segundo registro.");
   } catch (error) {
     console.error(error);
@@ -162,18 +156,16 @@ async function loadPreviousRecord(fecha) {
   if (!db) return;
 
   try {
-    const previousQuery = firestoreApi.query(
-      firestoreApi.collection(db, COLLECTION_NAME),
-      firestoreApi.where("fecha", "<", fecha),
-      firestoreApi.orderBy("fecha", "desc"),
-      firestoreApi.limit(1)
-    );
-    const snapshot = await firestoreApi.getDocs(previousQuery);
-    previousRecord = snapshot.empty ? null : snapshot.docs[0].data();
+    previousRecord = await getRecordByDate(getPreviousDate(fecha));
   } catch (error) {
     console.error(error);
     previousRecord = null;
   }
+}
+
+async function getRecordByDate(fecha) {
+  const snapshot = await firestoreApi.getDoc(firestoreApi.doc(db, COLLECTION_NAME, buildDocId(fecha)));
+  return snapshot.exists() ? normalizeRecord(snapshot.data()) : null;
 }
 
 async function loadHistory() {
@@ -186,7 +178,7 @@ async function loadHistory() {
       firestoreApi.limit(20)
     );
     const snapshot = await firestoreApi.getDocs(historyQuery);
-    const records = snapshot.docs.map((item) => item.data());
+    const records = snapshot.docs.map((item) => normalizeRecord(item.data()));
 
     elements.historyList.innerHTML = records.length
       ? records.map(renderHistoryItem).join("")
@@ -221,7 +213,7 @@ async function saveRecord(event) {
     const existingRecord = await firestoreApi.getDoc(recordRef);
 
     if (existingRecord.exists()) {
-      currentRecord = existingRecord.data();
+      currentRecord = normalizeRecord(existingRecord.data());
       setMessage("El registro ya existe para esta fecha. No se creó un segundo registro.");
       return;
     }
@@ -335,8 +327,8 @@ function fillForm(record) {
   elements.observationsInput.value = record.observaciones || "";
 
   categories.forEach((category) => {
-    const found = record.categorias?.find((item) => item.codigo === category.code || item.code === category.code);
-    document.querySelector(`#cat-${category.code}`).value = found?.valor ?? found?.value ?? "";
+    const found = record.categorias.find((item) => item.codigo === category.code);
+    document.querySelector(`#cat-${category.code}`).value = found?.valor ?? "";
   });
 }
 
@@ -364,17 +356,54 @@ function renderHistoryItem(record) {
   `;
 }
 
-function showWhatsappMessage() {
-  const record = buildRecord();
-  if (!record) return;
+async function showWhatsappMessage() {
+  if (!db) {
+    setMessage("Configura Firebase antes de generar WhatsApp.");
+    return;
+  }
 
-  const message = buildWhatsappMessage(record);
-  elements.whatsappText.value = message;
-  elements.openWhatsappLink.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
-  elements.whatsappDialog.showModal();
+  const fecha = elements.dateInput.value;
+  if (!fecha) {
+    setMessage("Selecciona una fecha para generar WhatsApp.");
+    return;
+  }
+
+  const whatsappWindow = window.open("", "_blank");
+  if (whatsappWindow) {
+    whatsappWindow.opener = null;
+    whatsappWindow.document.write("Generando mensaje de WhatsApp...");
+  }
+
+  try {
+    const record = await getRecordByDate(fecha);
+    if (!record) {
+      whatsappWindow?.close();
+      setMessage("No existe un registro guardado para la fecha seleccionada.");
+      return;
+    }
+
+    const previous = await getRecordByDate(getPreviousDate(fecha));
+    const message = buildWhatsappMessage(record, previous);
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+    elements.whatsappText.value = message;
+    elements.openWhatsappLink.href = whatsappUrl;
+    setMessage("Mensaje WhatsApp generado correctamente.");
+    elements.whatsappDialog.showModal();
+    if (whatsappWindow) {
+      whatsappWindow.location.href = whatsappUrl;
+    } else {
+      window.open(whatsappUrl, "_blank", "noopener");
+    }
+  } catch (error) {
+    whatsappWindow?.close();
+    console.error(error);
+    setMessage(`No se pudo generar WhatsApp: ${getFirestoreErrorMessage(error)}`);
+  }
 }
 
-function buildWhatsappMessage(record) {
+// Builds the daily WhatsApp summary from the selected record and the exact previous calendar day.
+function buildWhatsappMessage(record, previous) {
   const lines = [
     `CATEGORÍA FOCO 121 - ${formatDate(record.fecha)}`,
     `Responsable: ${record.nombre}`,
@@ -383,25 +412,29 @@ function buildWhatsappMessage(record) {
   ];
 
   record.categorias.forEach((category) => {
-    const previousCategory = previousRecord?.categorias?.find((item) => item.codigo === category.codigo || item.code === category.codigo);
-    const difference = previousCategory ? category.valor - (previousCategory.valor ?? previousCategory.value) : null;
+    const previousCategory = previous?.categorias.find((item) => item.codigo === category.codigo);
+    const difference = previousCategory ? category.valor - previousCategory.valor : null;
+
     lines.push(`${category.codigo} - ${category.nombre}: ${formatPercent(category.valor)}`);
-    lines.push(`↳ Vs ayer: ${formatDelta(difference)}`);
+    lines.push(`↳ Vs ayer: ${formatDelta(difference, "Sin comparación disponible")}`);
+    lines.push("");
   });
 
+  lines.push(`📊 Promedio General: ${formatPercent(record.promedio)}`);
+  lines.push(`↳ Vs ayer: ${previous ? formatDelta(record.promedio - previous.promedio, "Sin comparación disponible") : "Sin comparación disponible"}`);
   lines.push("");
-  lines.push(`Promedio general: ${formatPercent(record.promedio)}`);
-  lines.push(`Vs ayer del promedio: ${previousRecord ? formatDelta(record.promedio - previousRecord.promedio) : "Sin dato"}`);
+  lines.push("🎯 CATEGORÍAS CRÍTICAS");
   lines.push("");
-  lines.push("Top 3 categorías críticas:");
+
   record.categorias
     .slice()
     .sort((a, b) => a.valor - b.valor)
     .slice(0, 3)
     .forEach((category, index) => {
-      lines.push(`${index + 1}. ${category.codigo} - ${category.nombre}: ${formatPercent(category.valor)}`);
+      lines.push(`${index + 1}. ${category.nombre} (${formatPercent(category.valor)})`);
+      lines.push("");
     });
-  lines.push("");
+
   lines.push(`Observaciones: ${record.observaciones || "Sin observaciones"}`);
 
   return lines.join("\n");
@@ -413,6 +446,29 @@ async function copyWhatsappMessage() {
   setTimeout(() => {
     elements.copyButton.textContent = "Copiar";
   }, 1400);
+}
+
+function normalizeRecord(record) {
+  return {
+    ...record,
+    categorias: (record.categorias || record.categories || []).map(normalizeCategory),
+    nombre: record.nombre || record.evaluator || "",
+    observaciones: record.observaciones || record.observations || "",
+    promedio: Number(record.promedio ?? record.average ?? 0),
+    turno: record.turno || "",
+    fecha: record.fecha || record.date || ""
+  };
+}
+
+function normalizeCategory(category) {
+  return {
+    codigo: category.codigo || category.code,
+    code: category.codigo || category.code,
+    nombre: category.nombre || category.name,
+    name: category.nombre || category.name,
+    valor: Number(category.valor ?? category.value),
+    value: Number(category.valor ?? category.value)
+  };
 }
 
 function getEvaluatorName() {
@@ -442,6 +498,13 @@ function getToday() {
   return new Date(now.getTime() - offset * 60000).toISOString().slice(0, 10);
 }
 
+function getPreviousDate(fecha) {
+  const [year, month, day] = fecha.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
 function formatDate(date) {
   const [year, month, day] = date.split("-");
   return `${day}-${month}-${year}`;
@@ -455,8 +518,8 @@ function roundOne(value) {
   return Math.round(value * 10) / 10;
 }
 
-function formatDelta(value) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "Sin dato";
+function formatDelta(value, emptyText = "Sin dato") {
+  if (value === null || value === undefined || Number.isNaN(value)) return emptyText;
   const rounded = roundOne(value);
   if (rounded > 0) return `⬆️ +${rounded}%`;
   if (rounded < 0) return `⬇️ ${rounded}%`;
