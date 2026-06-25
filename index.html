@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CATEGORÍA FOCO 121</title>
+    <link rel="preconnect" href="https://www.gstatic.com" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Tienda 121</p>
+        <h1>CATEGORÍA FOCO 121</h1>
+      </div>
+      <div class="score-pill">
+        <span>Promedio</span>
+        <strong id="headerAverage">0%</strong>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="panel form-panel" aria-labelledby="dailyTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Evaluacion diaria</p>
+            <h2 id="dailyTitle">Registro del dia</h2>
+          </div>
+          <div id="connectionStatus" class="status-badge pending">Firebase pendiente</div>
+        </div>
+
+        <form id="evaluationForm">
+          <div class="form-grid">
+            <label>
+              Fecha
+              <input id="dateInput" name="date" type="date" required />
+            </label>
+
+            <label>
+              Nombre
+              <select id="nameSelect" name="name" required>
+                <option value="">Seleccionar</option>
+                <option>Gerencia</option>
+                <option>Jefatura</option>
+                <option>Supervisor</option>
+                <option>Equipo sala</option>
+                <option value="__other">Otro</option>
+              </select>
+            </label>
+
+            <label id="customNameWrap" class="hidden">
+              Nombre personalizado
+              <input id="customNameInput" name="customName" type="text" maxlength="40" placeholder="Escribe el nombre" />
+            </label>
+          </div>
+
+          <div class="categories-header">
+            <h3>11 categorias</h3>
+            <span>Ingresa porcentajes de 0 a 100</span>
+          </div>
+
+          <div id="categoriesGrid" class="categories-grid"></div>
+
+          <label class="observations-label">
+            Observaciones
+            <textarea id="observationsInput" name="observations" rows="4" placeholder="Comentarios relevantes del dia"></textarea>
+          </label>
+
+          <div class="summary-bar">
+            <div>
+              <span>Promedio automatico</span>
+              <strong id="formAverage">0%</strong>
+            </div>
+            <div>
+              <span>Vs ayer</span>
+              <strong id="averageDelta">Sin dato</strong>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary-button" type="submit">Guardar registro</button>
+            <button id="whatsappButton" class="secondary-button" type="button">Generar WhatsApp</button>
+          </div>
+
+          <p id="formMessage" class="form-message" role="status"></p>
+        </form>
+      </section>
+
+      <aside class="panel side-panel" aria-labelledby="historyTitle">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">Seguimiento</p>
+            <h2 id="historyTitle">Historial</h2>
+          </div>
+          <button id="refreshButton" class="icon-button" type="button" title="Actualizar historial" aria-label="Actualizar historial">↻</button>
+        </div>
+
+        <div class="critical-box">
+          <span>Top 3 criticas</span>
+          <ol id="criticalList"></ol>
+        </div>
+
+        <div id="historyList" class="history-list"></div>
+      </aside>
+    </main>
+
+    <dialog id="whatsappDialog">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2>Mensaje WhatsApp</h2>
+          <button class="icon-button" value="close" aria-label="Cerrar">×</button>
+        </div>
+        <textarea id="whatsappText" rows="18" readonly></textarea>
+        <div class="dialog-actions">
+          <button id="copyButton" class="secondary-button" type="button">Copiar</button>
+          <a id="openWhatsappLink" class="primary-button" href="#" target="_blank" rel="noopener">Abrir WhatsApp</a>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
