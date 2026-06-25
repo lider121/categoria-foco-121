@@ -49,6 +49,14 @@ Se agrega selector temporal de rol: Usuario, Supervisor y Administrador. Usuario
 
 El historial muestra `Eliminar` solo cuando el rol temporal es Administrador. La eliminación pide confirmación, borra el documento correspondiente en Firestore y actualiza historial y dashboard.
 
+## Versión 1.6
+
+Se agrega auditoría y respaldo de eliminaciones. Los registros nuevos guardan `createdAt`, `createdBy`, `updatedAt` y `updatedBy`. Al editar un registro existente se actualizan solo `updatedAt` y `updatedBy`, manteniendo los campos de creación originales sin cambios.
+
+Antes de eliminar un documento de `registros`, la app guarda una copia completa en la colección `deletedLogs` con el ID eliminado, los datos del registro, `deletedBy` y `deletedAt`. Si no se puede crear el respaldo, la eliminación no continúa.
+
+La exportación conserva el CSV compatible con Excel y agrega descarga JSON usando el mismo rango seleccionado: todos los registros, últimos 7 días o mes actual.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.
@@ -80,6 +88,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /registros/{document} {
+      allow read, write: if true;
+    }
+    match /deletedLogs/{document} {
       allow read, write: if true;
     }
   }

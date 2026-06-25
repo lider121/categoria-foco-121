@@ -9,6 +9,7 @@ const firebaseConfig = {
 
 const STORE_ID = "121";
 const COLLECTION_NAME = "registros";
+const DELETED_LOGS_COLLECTION = "deletedLogs";
 
 const categories = [
   { code: "82", name: "Check-Out" },
@@ -41,6 +42,7 @@ const elements = {
   dateInput: document.querySelector("#dateInput"),
   editStatus: document.querySelector("#editStatus"),
   exportButton: document.querySelector("#exportButton"),
+  exportJsonButton: document.querySelector("#exportJsonButton"),
   exportRange: document.querySelector("#exportRange"),
   form: document.querySelector("#evaluationForm"),
   formPanel: document.querySelector(".form-panel"),
@@ -87,6 +89,7 @@ function bindEvents() {
   elements.dateInput.addEventListener("change", handleDateChange);
   elements.cancelEditButton.addEventListener("click", cancelEditing);
   elements.exportButton.addEventListener("click", exportRecords);
+  elements.exportJsonButton.addEventListener("click", exportJsonRecords);
   elements.refreshButton.addEventListener("click", refreshSummary);
   elements.roleSelect.addEventListener("change", handleRoleChange);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
@@ -169,6 +172,20 @@ function handleRoleChange() {
 
 function getCurrentRole() {
   return elements.roleSelect.value;
+}
+
+function getRoleLabel() {
+  const labels = {
+    user: "Usuario",
+    supervisor: "Supervisor",
+    admin: "Administrador"
+  };
+  return labels[getCurrentRole()] || getCurrentRole();
+}
+
+function getActorName() {
+  const evaluator = getEvaluatorName() || "Sin nombre";
+  return `${evaluator} (${getRoleLabel()})`;
 }
 
 function canEditRecords() {
@@ -306,7 +323,17 @@ async function deleteRecord(fecha) {
   if (!confirmed) return;
 
   try {
-    await firestoreApi.deleteDoc(firestoreApi.doc(db, COLLECTION_NAME, buildDocId(fecha)));
+    const recordRef = firestoreApi.doc(db, COLLECTION_NAME, buildDocId(fecha));
+    const snapshot = await firestoreApi.getDoc(recordRef);
+
+    if (!snapshot.exists()) {
+      setMessage("No se encontro el registro para eliminar.");
+      await refreshSummary();
+      return;
+    }
+
+    await saveDeletedLog(fecha, snapshot.data());
+    await firestoreApi.deleteDoc(recordRef);
 
     if (editingRecordDate === fecha) {
       setEditMode(null);
@@ -326,6 +353,18 @@ async function deleteRecord(fecha) {
     console.error(error);
     setMessage(`No se pudo eliminar el registro: ${getFirestoreErrorMessage(error)}`);
   }
+}
+
+async function saveDeletedLog(documentId, deletedData) {
+  const logId = `${documentId}_${Date.now()}`;
+  const logRef = firestoreApi.doc(db, DELETED_LOGS_COLLECTION, logId);
+
+  await firestoreApi.setDoc(logRef, {
+    documentId,
+    deletedData,
+    deletedBy: getActorName(),
+    deletedAt: firestoreApi.serverTimestamp()
+  });
 }
 
 function cancelEditing() {
@@ -421,6 +460,31 @@ async function exportRecords() {
   }
 }
 
+async function exportJsonRecords() {
+  if (!db) {
+    setMessage("Configura Firebase antes de exportar.");
+    return;
+  }
+
+  try {
+    const range = elements.exportRange.value;
+    const records = await getRecordsForExport(range);
+
+    if (!records.length) {
+      setMessage("No hay registros para exportar en el rango seleccionado.");
+      return;
+    }
+
+    const json = JSON.stringify(records, null, 2);
+    const filename = `categoria-foco-121-${range}-${getToday()}.json`;
+    downloadJson(json, filename);
+    setMessage(`JSON generado correctamente: ${records.length} registro(s).`);
+  } catch (error) {
+    console.error(error);
+    setMessage(`No se pudo exportar JSON: ${getFirestoreErrorMessage(error)}`);
+  }
+}
+
 async function getRecordsForExport(range) {
   const exportQuery = firestoreApi.query(
     firestoreApi.collection(db, COLLECTION_NAME),
@@ -491,6 +555,18 @@ function downloadCsv(csv, filename) {
   URL.revokeObjectURL(url);
 }
 
+function downloadJson(json, filename) {
+  const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 async function saveRecord(event) {
   event.preventDefault();
 
@@ -519,7 +595,11 @@ async function saveRecord(event) {
 
     await firestoreApi.setDoc(recordRef, {
       ...record,
-      fechaHoraRegistro: firestoreApi.serverTimestamp()
+      fechaHoraRegistro: firestoreApi.serverTimestamp(),
+      createdAt: firestoreApi.serverTimestamp(),
+      createdBy: getActorName(),
+      updatedAt: firestoreApi.serverTimestamp(),
+      updatedBy: getActorName()
     });
 
     currentRecord = record;
@@ -544,11 +624,27 @@ async function updateExistingRecord(record) {
   }
 
   const currentData = existingRecord.data();
+  const preservedCreationFields = {};
+
+  if (Object.prototype.hasOwnProperty.call(currentData, "fechaHoraRegistro")) {
+    preservedCreationFields.fechaHoraRegistro = currentData.fechaHoraRegistro;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(currentData, "createdAt")) {
+    preservedCreationFields.createdAt = currentData.createdAt;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(currentData, "createdBy")) {
+    preservedCreationFields.createdBy = currentData.createdBy;
+  }
+
   const updatedRecord = {
     ...record,
+    ...preservedCreationFields,
     fecha: editingRecordDate,
-    fechaHoraRegistro: currentData.fechaHoraRegistro || firestoreApi.serverTimestamp(),
-    fechaHoraActualizacion: firestoreApi.serverTimestamp()
+    fechaHoraActualizacion: firestoreApi.serverTimestamp(),
+    updatedAt: firestoreApi.serverTimestamp(),
+    updatedBy: getActorName()
   };
 
   // Futuro control de permisos: aquí se validará si el usuario es admin/supervisor antes de actualizar.
