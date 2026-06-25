@@ -1,10 +1,10 @@
 const firebaseConfig = {
-  apiKey: "PEGA_AQUI_TU_API_KEY",
-  authDomain: "PEGA_AQUI_TU_AUTH_DOMAIN",
-  projectId: "PEGA_AQUI_TU_PROJECT_ID",
-  storageBucket: "PEGA_AQUI_TU_STORAGE_BUCKET",
-  messagingSenderId: "PEGA_AQUI_TU_MESSAGING_SENDER_ID",
-  appId: "PEGA_AQUI_TU_APP_ID"
+  apiKey: "AIzaSyA5AfF8Qi06Vnvshqsc_-sNVZxdnoPYCHU",
+  authDomain: "categoria-foco-121.firebaseapp.com",
+  projectId: "categoria-foco-121",
+  storageBucket: "categoria-foco-121.firebasestorage.app",
+  messagingSenderId: "585974456578",
+  appId: "1:585974456578:web:ba52c1c4f4867e6878a21b"
 };
 
 const STORE_ID = "121";
@@ -476,7 +476,7 @@ function getFirestoreErrorMessage(error) {
   if (!error?.code) return "revisa tu conexión e inténtalo nuevamente.";
 
   const messages = {
-    "permission-denied": "no tienes permisos para escribir en Firestore. Revisa las reglas de seguridad.",
+    "permission-denied": "no tienes permisos para leer o escribir en Firestore. Revisa las reglas de seguridad.",
     unavailable: "Firestore no está disponible en este momento. Revisa la conexión.",
     "not-found": "no se encontró la base de datos o la colección solicitada.",
     unauthenticated: "la operación requiere autenticación."
