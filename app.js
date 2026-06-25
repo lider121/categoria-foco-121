@@ -384,9 +384,6 @@ async function showWhatsappMessage() {
     const copied = await copyTextToClipboard(message);
     setMessage(copied ? "Mensaje WhatsApp generado correctamente y copiado al portapapeles." : "Mensaje WhatsApp generado correctamente. Usa Copiar mensaje si WhatsApp no pega el texto.");
     elements.whatsappDialog.showModal();
-    setTimeout(() => {
-      window.open(whatsappUrl, "_blank", "noopener");
-    }, 650);
   } catch (error) {
     console.error(error);
     setMessage(`No se pudo generar WhatsApp: ${getFirestoreErrorMessage(error)}`);
@@ -433,9 +430,9 @@ function buildWhatsappMessage(record, previous) {
 
 async function copyWhatsappMessage() {
   await copyTextToClipboard(elements.whatsappText.value);
-  elements.copyButton.textContent = "Copiado";
+  elements.copyButton.textContent = "Mensaje copiado";
   setTimeout(() => {
-    elements.copyButton.textContent = "Copiar mensaje";
+    elements.copyButton.textContent = "📋 Copiar mensaje";
   }, 1400);
 }
 
