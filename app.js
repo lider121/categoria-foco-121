@@ -1,18 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  getFirestore,
-  limit,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  where
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
 const firebaseConfig = {
   apiKey: "PEGA_AQUI_TU_API_KEY",
   authDomain: "PEGA_AQUI_TU_AUTH_DOMAIN",
@@ -23,7 +8,7 @@ const firebaseConfig = {
 };
 
 const STORE_ID = "121";
-const COLLECTION_NAME = "categoria_foco_121";
+const COLLECTION_NAME = "registros";
 
 const categories = [
   { code: "82", name: "Check-Out" },
@@ -31,7 +16,7 @@ const categories = [
   { code: "92", name: "Bebidas-Café" },
   { code: "14", name: "Artículos y Hogar" },
   { code: "10", name: "Automotriz" },
-  { code: "20", name: "Cocina y Bano" },
+  { code: "20", name: "Cocina y Baño" },
   { code: "09", name: "Deportes" },
   { code: "15", name: "Electrodomésticos" },
   { code: "53", name: "Descartables y Cumpleaños" },
@@ -57,6 +42,7 @@ const elements = {
   observationsInput: document.querySelector("#observationsInput"),
   openWhatsappLink: document.querySelector("#openWhatsappLink"),
   refreshButton: document.querySelector("#refreshButton"),
+  shiftSelect: document.querySelector("#shiftSelect"),
   whatsappButton: document.querySelector("#whatsappButton"),
   whatsappDialog: document.querySelector("#whatsappDialog"),
   whatsappText: document.querySelector("#whatsappText")
@@ -65,6 +51,7 @@ const elements = {
 let db = null;
 let previousRecord = null;
 let currentRecord = null;
+let firestoreApi = null;
 
 init();
 
@@ -103,23 +90,35 @@ function renderCategoryInputs() {
     .join("");
 }
 
-function connectFirebase() {
+async function connectFirebase() {
+  if (window.__CATEGORIA_FOCO_FIRESTORE__) {
+    firestoreApi = window.__CATEGORIA_FOCO_FIRESTORE__;
+    db = firestoreApi.db;
+    setStatus("Firebase prueba", "ready");
+    await handleDateChange();
+    await loadHistory();
+    return;
+  }
+
   if (firebaseConfig.projectId.includes("PEGA_AQUI")) {
     setStatus("Firebase pendiente", "pending");
-    setMessage("Pega la configuracion de Firebase en app.js para guardar en Firestore.");
+    setMessage("Pega la configuración de Firebase en app.js para guardar en Firestore.");
     return;
   }
 
   try {
-    const app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
+    const firebaseApp = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
+    const firebaseFirestore = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
+    firestoreApi = firebaseFirestore;
+    const app = firebaseApp.initializeApp(firebaseConfig);
+    db = firebaseFirestore.getFirestore(app);
     setStatus("Firebase conectado", "ready");
-    handleDateChange();
-    loadHistory();
+    await handleDateChange();
+    await loadHistory();
   } catch (error) {
     console.error(error);
     setStatus("Error Firebase", "error");
-    setMessage("No se pudo conectar con Firebase. Revisa la configuracion.");
+    setMessage("No se pudo conectar con Firebase. Revisa la configuración.");
   }
 }
 
@@ -141,35 +140,35 @@ function handleNameChange() {
   elements.customNameInput.required = isOther;
 }
 
-async function loadRecordForDate(date) {
+async function loadRecordForDate(fecha) {
   try {
-    const snapshot = await getDoc(doc(db, COLLECTION_NAME, buildDocId(date)));
+    const snapshot = await firestoreApi.getDoc(firestoreApi.doc(db, COLLECTION_NAME, buildDocId(fecha)));
     if (!snapshot.exists()) {
-      clearFormValues(false);
+      clearFormValues(true);
       setMessage("");
       return;
     }
 
     currentRecord = snapshot.data();
     fillForm(currentRecord);
-    setMessage("Ya existe un registro para esta fecha. Al guardar se actualizara el mismo registro.");
+    setMessage("Ya existe un registro para esta fecha. No se creará un segundo registro.");
   } catch (error) {
     console.error(error);
-    setMessage("No se pudo cargar el registro de la fecha.");
+    setMessage(`No se pudo comprobar el registro de la fecha: ${getFirestoreErrorMessage(error)}`);
   }
 }
 
-async function loadPreviousRecord(date) {
+async function loadPreviousRecord(fecha) {
   if (!db) return;
 
   try {
-    const previousQuery = query(
-      collection(db, COLLECTION_NAME),
-      where("date", "<", date),
-      orderBy("date", "desc"),
-      limit(1)
+    const previousQuery = firestoreApi.query(
+      firestoreApi.collection(db, COLLECTION_NAME),
+      firestoreApi.where("fecha", "<", fecha),
+      firestoreApi.orderBy("fecha", "desc"),
+      firestoreApi.limit(1)
     );
-    const snapshot = await getDocs(previousQuery);
+    const snapshot = await firestoreApi.getDocs(previousQuery);
     previousRecord = snapshot.empty ? null : snapshot.docs[0].data();
   } catch (error) {
     console.error(error);
@@ -181,13 +180,17 @@ async function loadHistory() {
   if (!db) return;
 
   try {
-    const historyQuery = query(collection(db, COLLECTION_NAME), orderBy("date", "desc"), limit(20));
-    const snapshot = await getDocs(historyQuery);
+    const historyQuery = firestoreApi.query(
+      firestoreApi.collection(db, COLLECTION_NAME),
+      firestoreApi.orderBy("fecha", "desc"),
+      firestoreApi.limit(20)
+    );
+    const snapshot = await firestoreApi.getDocs(historyQuery);
     const records = snapshot.docs.map((item) => item.data());
 
     elements.historyList.innerHTML = records.length
       ? records.map(renderHistoryItem).join("")
-      : `<p class="form-message">Sin registros todavia.</p>`;
+      : `<p class="form-message">Sin registros todavía.</p>`;
 
     elements.historyList.querySelectorAll("button[data-date]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -198,7 +201,7 @@ async function loadHistory() {
     });
   } catch (error) {
     console.error(error);
-    elements.historyList.innerHTML = `<p class="form-message">No se pudo cargar el historial.</p>`;
+    elements.historyList.innerHTML = `<p class="form-message">No se pudo cargar el historial: ${escapeHtml(getFirestoreErrorMessage(error))}</p>`;
   }
 }
 
@@ -214,96 +217,126 @@ async function saveRecord(event) {
   if (!record) return;
 
   try {
-    await setDoc(doc(db, COLLECTION_NAME, buildDocId(record.date)), {
+    const recordRef = firestoreApi.doc(db, COLLECTION_NAME, buildDocId(record.fecha));
+    const existingRecord = await firestoreApi.getDoc(recordRef);
+
+    if (existingRecord.exists()) {
+      currentRecord = existingRecord.data();
+      setMessage("El registro ya existe para esta fecha. No se creó un segundo registro.");
+      return;
+    }
+
+    await firestoreApi.setDoc(recordRef, {
       ...record,
-      updatedAt: serverTimestamp(),
-      createdAt: currentRecord?.createdAt || serverTimestamp()
+      fechaHoraRegistro: firestoreApi.serverTimestamp()
     });
 
     currentRecord = record;
-    setMessage("Registro guardado correctamente.");
-    await loadPreviousRecord(record.date);
+    setMessage("Registro guardado correctamente");
+    await loadPreviousRecord(record.fecha);
     await loadHistory();
     updateComputedState();
   } catch (error) {
     console.error(error);
-    setMessage("No se pudo guardar en Firestore. Revisa reglas y conexion.");
+    setMessage(`Error al guardar en Firestore: ${getFirestoreErrorMessage(error)}`);
   }
 }
 
 function buildRecord() {
-  const evaluator = getEvaluatorName();
+  const nombre = getEvaluatorName();
+  const turno = elements.shiftSelect.value;
   const values = readCategoryValues();
+  const promedio = calculateAverage(values);
+  const observaciones = elements.observationsInput.value.trim();
 
-  if (!evaluator) {
+  if (!elements.dateInput.value) {
+    setMessage("Selecciona una fecha.");
+    return null;
+  }
+
+  if (!nombre) {
     setMessage("Selecciona un nombre.");
     return null;
   }
 
-  if (values.some((item) => Number.isNaN(item.value))) {
-    setMessage("Completa las 11 categorias.");
+  if (!turno) {
+    setMessage("Selecciona un turno.");
     return null;
   }
 
-  if (values.some((item) => item.value < 0 || item.value > 100)) {
+  if (values.some((item) => Number.isNaN(item.valor))) {
+    setMessage("Todas las categorías deben tener un valor numérico.");
+    return null;
+  }
+
+  if (values.some((item) => item.valor < 0 || item.valor > 100)) {
     setMessage("Los porcentajes deben estar entre 0 y 100.");
     return null;
   }
 
   return {
-    date: elements.dateInput.value,
-    storeId: STORE_ID,
-    evaluator,
-    categories: values,
-    average: calculateAverage(values),
-    observations: elements.observationsInput.value.trim()
+    fecha: elements.dateInput.value,
+    nombre,
+    turno,
+    categorias: values,
+    promedio,
+    observaciones,
+    tienda: STORE_ID
   };
 }
 
 function readCategoryValues() {
   return categories.map((category) => {
     const input = document.querySelector(`#cat-${category.code}`);
+    const valor = input.value === "" ? Number.NaN : Number(input.value);
+
     return {
-      ...category,
-      value: input.value === "" ? Number.NaN : Number(input.value)
+      codigo: category.code,
+      code: category.code,
+      nombre: category.name,
+      name: category.name,
+      valor,
+      value: valor
     };
   });
 }
 
 function calculateAverage(values) {
-  if (!values.length || values.some((item) => Number.isNaN(item.value))) return 0;
-  const total = values.reduce((sum, item) => sum + item.value, 0);
+  if (!values.length || values.some((item) => Number.isNaN(item.valor))) return 0;
+  const total = values.reduce((sum, item) => sum + item.valor, 0);
   return roundOne(total / values.length);
 }
 
 function updateComputedState() {
   const values = readCategoryValues();
   const average = calculateAverage(values);
-  const hasCompleteValues = values.every((item) => !Number.isNaN(item.value));
+  const hasCompleteValues = values.every((item) => !Number.isNaN(item.valor));
+  const previousAverage = previousRecord?.promedio;
 
   elements.formAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
   elements.headerAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
-  elements.averageDelta.textContent = previousRecord ? formatDelta(average - previousRecord.average) : "Sin dato";
+  elements.averageDelta.textContent = previousAverage !== undefined ? formatDelta(average - previousAverage) : "Sin dato";
   renderCriticalList(values);
 }
 
 function renderCriticalList(values) {
-  const validValues = values.filter((item) => !Number.isNaN(item.value));
-  const critical = validValues.sort((a, b) => a.value - b.value).slice(0, 3);
+  const validValues = values.filter((item) => !Number.isNaN(item.valor));
+  const critical = validValues.sort((a, b) => a.valor - b.valor).slice(0, 3);
 
   elements.criticalList.innerHTML = critical.length
-    ? critical.map((item) => `<li>${item.code} ${item.name}: ${formatPercent(item.value)}</li>`).join("")
+    ? critical.map((item) => `<li>${item.codigo} ${item.nombre}: ${formatPercent(item.valor)}</li>`).join("")
     : "<li>Sin datos</li>";
 }
 
 function fillForm(record) {
-  elements.dateInput.value = record.date;
-  setEvaluatorName(record.evaluator);
-  elements.observationsInput.value = record.observations || "";
+  elements.dateInput.value = record.fecha;
+  setEvaluatorName(record.nombre);
+  elements.shiftSelect.value = record.turno || "";
+  elements.observationsInput.value = record.observaciones || "";
 
   categories.forEach((category) => {
-    const found = record.categories?.find((item) => item.code === category.code);
-    document.querySelector(`#cat-${category.code}`).value = found?.value ?? "";
+    const found = record.categorias?.find((item) => item.codigo === category.code || item.code === category.code);
+    document.querySelector(`#cat-${category.code}`).value = found?.valor ?? found?.value ?? "";
   });
 }
 
@@ -318,13 +351,14 @@ function clearFormValues(keepDate = true) {
 }
 
 function renderHistoryItem(record) {
-  const date = escapeHtml(formatDate(record.date));
-  const evaluator = escapeHtml(record.evaluator || "Sin nombre");
+  const date = escapeHtml(formatDate(record.fecha));
+  const nombre = escapeHtml(record.nombre || "Sin nombre");
+  const turno = escapeHtml(record.turno || "Sin turno");
   return `
     <article class="history-item">
-      <button type="button" data-date="${escapeHtml(record.date)}">
-        <span>${date}<br />${evaluator}</span>
-        <strong>${formatPercent(record.average)}</strong>
+      <button type="button" data-date="${escapeHtml(record.fecha)}">
+        <span>${date}<br />${nombre} · ${turno}</span>
+        <strong>${formatPercent(record.promedio)}</strong>
       </button>
     </article>
   `;
@@ -342,32 +376,33 @@ function showWhatsappMessage() {
 
 function buildWhatsappMessage(record) {
   const lines = [
-    `CATEGORÍA FOCO 121 - ${formatDate(record.date)}`,
-    `Responsable: ${record.evaluator}`,
+    `CATEGORÍA FOCO 121 - ${formatDate(record.fecha)}`,
+    `Responsable: ${record.nombre}`,
+    `Turno: ${record.turno}`,
     ""
   ];
 
-  record.categories.forEach((category) => {
-    const previousCategory = previousRecord?.categories?.find((item) => item.code === category.code);
-    const difference = previousCategory ? category.value - previousCategory.value : null;
-    lines.push(`${category.code} - ${category.name}: ${formatPercent(category.value)}`);
+  record.categorias.forEach((category) => {
+    const previousCategory = previousRecord?.categorias?.find((item) => item.codigo === category.codigo || item.code === category.codigo);
+    const difference = previousCategory ? category.valor - (previousCategory.valor ?? previousCategory.value) : null;
+    lines.push(`${category.codigo} - ${category.nombre}: ${formatPercent(category.valor)}`);
     lines.push(`↳ Vs ayer: ${formatDelta(difference)}`);
   });
 
   lines.push("");
-  lines.push(`Promedio general: ${formatPercent(record.average)}`);
-  lines.push(`Vs ayer del promedio: ${previousRecord ? formatDelta(record.average - previousRecord.average) : "Sin dato"}`);
+  lines.push(`Promedio general: ${formatPercent(record.promedio)}`);
+  lines.push(`Vs ayer del promedio: ${previousRecord ? formatDelta(record.promedio - previousRecord.promedio) : "Sin dato"}`);
   lines.push("");
-  lines.push("Top 3 categorias criticas:");
-  record.categories
+  lines.push("Top 3 categorías críticas:");
+  record.categorias
     .slice()
-    .sort((a, b) => a.value - b.value)
+    .sort((a, b) => a.valor - b.valor)
     .slice(0, 3)
     .forEach((category, index) => {
-      lines.push(`${index + 1}. ${category.code} - ${category.name}: ${formatPercent(category.value)}`);
+      lines.push(`${index + 1}. ${category.codigo} - ${category.nombre}: ${formatPercent(category.valor)}`);
     });
   lines.push("");
-  lines.push(`Observaciones: ${record.observations || "Sin observaciones"}`);
+  lines.push(`Observaciones: ${record.observaciones || "Sin observaciones"}`);
 
   return lines.join("\n");
 }
@@ -397,8 +432,8 @@ function setEvaluatorName(name) {
   handleNameChange();
 }
 
-function buildDocId(date) {
-  return `${STORE_ID}_${date}`;
+function buildDocId(fecha) {
+  return fecha;
 }
 
 function getToday() {
@@ -435,6 +470,19 @@ function setStatus(text, type) {
 
 function setMessage(text) {
   elements.formMessage.textContent = text;
+}
+
+function getFirestoreErrorMessage(error) {
+  if (!error?.code) return "revisa tu conexión e inténtalo nuevamente.";
+
+  const messages = {
+    "permission-denied": "no tienes permisos para escribir en Firestore. Revisa las reglas de seguridad.",
+    unavailable: "Firestore no está disponible en este momento. Revisa la conexión.",
+    "not-found": "no se encontró la base de datos o la colección solicitada.",
+    unauthenticated: "la operación requiere autenticación."
+  };
+
+  return messages[error.code] || `${error.code}. Revisa la configuración de Firebase y las reglas de Firestore.`;
 }
 
 function escapeHtml(value) {
