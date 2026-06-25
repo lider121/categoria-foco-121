@@ -31,6 +31,12 @@ La pantalla inicial incluye un dashboard superior con el promedio del último re
 - Amarillo: `60` a `79.9`
 - Rojo: `< 60`
 
+## Versión 1.2
+
+El historial permite abrir registros existentes con `Ver / Editar`. En modo edición, la fecha queda bloqueada, el botón principal cambia a `Actualizar registro` y el guardado actualiza el mismo documento de Firestore sin crear duplicados. El botón `Cancelar edición` vuelve al modo de registro normal.
+
+Los permisos por rol todavía no están implementados; el punto de control para admin/supervisor queda comentado en `app.js`.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

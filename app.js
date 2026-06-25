@@ -26,6 +26,7 @@ const categories = [
 
 const elements = {
   averageDelta: document.querySelector("#averageDelta"),
+  cancelEditButton: document.querySelector("#cancelEditButton"),
   categoriesGrid: document.querySelector("#categoriesGrid"),
   connectionStatus: document.querySelector("#connectionStatus"),
   copyButton: document.querySelector("#copyButton"),
@@ -38,7 +39,9 @@ const elements = {
   customNameInput: document.querySelector("#customNameInput"),
   customNameWrap: document.querySelector("#customNameWrap"),
   dateInput: document.querySelector("#dateInput"),
+  editStatus: document.querySelector("#editStatus"),
   form: document.querySelector("#evaluationForm"),
+  formPanel: document.querySelector(".form-panel"),
   formAverage: document.querySelector("#formAverage"),
   formMessage: document.querySelector("#formMessage"),
   headerAverage: document.querySelector("#headerAverage"),
@@ -47,6 +50,7 @@ const elements = {
   observationsInput: document.querySelector("#observationsInput"),
   openWhatsappLink: document.querySelector("#openWhatsappLink"),
   refreshButton: document.querySelector("#refreshButton"),
+  saveButton: document.querySelector("#saveButton"),
   shiftSelect: document.querySelector("#shiftSelect"),
   whatsappButton: document.querySelector("#whatsappButton"),
   whatsappDialog: document.querySelector("#whatsappDialog"),
@@ -58,6 +62,7 @@ const elements = {
 let db = null;
 let previousRecord = null;
 let currentRecord = null;
+let editingRecordDate = null;
 let firestoreApi = null;
 
 init();
@@ -75,6 +80,7 @@ function bindEvents() {
   elements.form.addEventListener("submit", saveRecord);
   elements.nameSelect.addEventListener("change", handleNameChange);
   elements.dateInput.addEventListener("change", handleDateChange);
+  elements.cancelEditButton.addEventListener("click", cancelEditing);
   elements.refreshButton.addEventListener("click", refreshSummary);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
@@ -126,6 +132,10 @@ async function connectFirebase() {
 }
 
 async function handleDateChange() {
+  if (editingRecordDate && elements.dateInput.value !== editingRecordDate) {
+    setEditMode(null);
+  }
+
   currentRecord = null;
   previousRecord = null;
   updateComputedState();
@@ -193,11 +203,9 @@ async function loadHistory() {
       ? records.map(renderHistoryItem).join("")
       : `<p class="form-message">Sin registros todavía.</p>`;
 
-    elements.historyList.querySelectorAll("button[data-date]").forEach((button) => {
+    elements.historyList.querySelectorAll("button[data-edit-date]").forEach((button) => {
       button.addEventListener("click", () => {
-        elements.dateInput.value = button.dataset.date;
-        handleDateChange();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        startEditingRecord(button.dataset.editDate);
       });
     });
   } catch (error) {
@@ -209,6 +217,46 @@ async function loadHistory() {
 async function refreshSummary() {
   await loadHistory();
   await loadDashboard();
+}
+
+async function startEditingRecord(fecha) {
+  if (!db) return;
+
+  try {
+    const record = await getRecordByDate(fecha);
+    if (!record) {
+      setMessage("No se encontró el registro seleccionado.");
+      return;
+    }
+
+    currentRecord = record;
+    fillForm(record);
+    await loadPreviousRecord(record.fecha);
+    setEditMode(record.fecha);
+    updateComputedState();
+    setMessage("Editando registro existente. Al guardar se actualizará el mismo documento.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (error) {
+    console.error(error);
+    setMessage(`No se pudo abrir el registro para edición: ${getFirestoreErrorMessage(error)}`);
+  }
+}
+
+function cancelEditing() {
+  setEditMode(null);
+  setMessage("Edición cancelada.");
+}
+
+function setEditMode(fecha) {
+  editingRecordDate = fecha;
+  const isEditing = Boolean(fecha);
+
+  elements.dateInput.disabled = isEditing;
+  elements.editStatus.classList.toggle("hidden", !isEditing);
+  elements.cancelEditButton.classList.toggle("hidden", !isEditing);
+  elements.formPanel.classList.toggle("editing", isEditing);
+  elements.saveButton.textContent = isEditing ? "Actualizar registro" : "Guardar registro";
+  elements.editStatus.textContent = isEditing ? `Editando registro del ${formatDate(fecha)}` : "";
 }
 
 async function loadDashboard() {
@@ -274,6 +322,11 @@ async function saveRecord(event) {
   if (!record) return;
 
   try {
+    if (editingRecordDate) {
+      await updateExistingRecord(record);
+      return;
+    }
+
     const recordRef = firestoreApi.doc(db, COLLECTION_NAME, buildDocId(record.fecha));
     const existingRecord = await firestoreApi.getDoc(recordRef);
 
@@ -298,6 +351,34 @@ async function saveRecord(event) {
     console.error(error);
     setMessage(`Error al guardar en Firestore: ${getFirestoreErrorMessage(error)}`);
   }
+}
+
+async function updateExistingRecord(record) {
+  const recordRef = firestoreApi.doc(db, COLLECTION_NAME, buildDocId(editingRecordDate));
+  const existingRecord = await firestoreApi.getDoc(recordRef);
+
+  if (!existingRecord.exists()) {
+    setMessage("No se encontró el registro original para actualizar.");
+    return;
+  }
+
+  const currentData = existingRecord.data();
+  const updatedRecord = {
+    ...record,
+    fecha: editingRecordDate,
+    fechaHoraRegistro: currentData.fechaHoraRegistro || firestoreApi.serverTimestamp(),
+    fechaHoraActualizacion: firestoreApi.serverTimestamp()
+  };
+
+  // Futuro control de permisos: aquí se validará si el usuario es admin/supervisor antes de actualizar.
+  await firestoreApi.setDoc(recordRef, updatedRecord);
+
+  currentRecord = normalizeRecord(updatedRecord);
+  setMessage("Registro actualizado correctamente.");
+  await loadPreviousRecord(editingRecordDate);
+  await refreshSummary();
+  setEditMode(editingRecordDate);
+  updateComputedState();
 }
 
 function buildRecord() {
@@ -446,10 +527,13 @@ function renderHistoryItem(record) {
   const turno = escapeHtml(record.turno || "Sin turno");
   return `
     <article class="history-item">
-      <button type="button" data-date="${escapeHtml(record.fecha)}">
-        <span>${date}<br />${nombre} · ${turno}</span>
-        <strong>${formatPercent(record.promedio)}</strong>
-      </button>
+      <div class="history-row">
+        <div>
+          <span>${date}<br />${nombre} · ${turno}</span>
+          <strong>${formatPercent(record.promedio)}</strong>
+        </div>
+        <button class="history-edit-button" type="button" data-edit-date="${escapeHtml(record.fecha)}">Ver / Editar</button>
+      </div>
     </article>
   `;
 }

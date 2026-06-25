@@ -233,6 +233,21 @@ textarea {
   padding: clamp(18px, 3vw, 28px);
 }
 
+.form-panel.editing {
+  border-color: rgba(178, 107, 0, 0.5);
+  box-shadow: 0 16px 42px rgba(178, 107, 0, 0.16);
+}
+
+.edit-status {
+  margin: -8px 0 18px;
+  padding: 12px 14px;
+  color: #7a4a00;
+  background: #fff4dc;
+  border: 1px solid #ffd58a;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
 .side-panel {
   align-self: start;
   padding: 20px;
@@ -476,17 +491,11 @@ textarea {
   background: #ffffff;
 }
 
-.history-item button {
+.history-row {
   display: grid;
-  width: 100%;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 8px;
-  border: 0;
-  padding: 0;
-  color: inherit;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
 }
 
 .history-item strong {
@@ -496,6 +505,17 @@ textarea {
 .history-item span {
   color: var(--muted);
   font-size: 13px;
+}
+
+.history-edit-button {
+  padding: 9px 10px;
+  color: var(--blue);
+  background: #eaf1ff;
+  border: 1px solid rgba(24, 90, 219, 0.16);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 dialog {
@@ -563,6 +583,10 @@ dialog form {
   .dialog-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .history-row {
+    grid-template-columns: 1fr;
   }
 
   .status-badge,

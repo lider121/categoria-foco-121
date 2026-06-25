@@ -70,6 +70,10 @@
           <div id="connectionStatus" class="status-badge pending">Firebase pendiente</div>
         </div>
 
+        <div id="editStatus" class="edit-status hidden" role="status">
+          Editando registro existente
+        </div>
+
         <form id="evaluationForm" novalidate>
           <div class="form-grid">
             <label>
@@ -129,7 +133,8 @@
           </div>
 
           <div class="actions">
-            <button class="primary-button" type="submit">Guardar registro</button>
+            <button id="saveButton" class="primary-button" type="submit">Guardar registro</button>
+            <button id="cancelEditButton" class="secondary-button hidden" type="button">Cancelar edición</button>
             <button id="whatsappButton" class="secondary-button" type="button">Generar WhatsApp</button>
           </div>
 
