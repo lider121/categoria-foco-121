@@ -168,6 +168,39 @@
           <ol id="criticalList"></ol>
         </div>
 
+        <div class="filters-box" aria-label="Filtros de historial">
+          <label>
+            Buscar registros
+            <input id="historySearchInput" type="search" placeholder="Fecha, usuario, turno u observación" autocomplete="off" />
+          </label>
+          <div class="filters-grid">
+            <label>
+              Desde
+              <input id="filterDateFrom" type="date" />
+            </label>
+            <label>
+              Hasta
+              <input id="filterDateTo" type="date" />
+            </label>
+          </div>
+          <label>
+            Usuario creador
+            <select id="filterCreator">
+              <option value="">Todos</option>
+            </select>
+          </label>
+          <label>
+            Categoría
+            <select id="filterCategory">
+              <option value="">Todas</option>
+            </select>
+          </label>
+          <div class="filters-actions">
+            <span id="resultsCount">0 resultados</span>
+            <button id="clearFiltersButton" class="secondary-button" type="button">Limpiar filtros</button>
+          </div>
+        </div>
+
         <div class="export-box">
           <label>
             Exportar registros

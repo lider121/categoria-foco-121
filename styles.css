@@ -507,6 +507,39 @@ textarea {
   background: #f7fafc;
 }
 
+.filters-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.filters-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+#resultsCount {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.filters-actions .secondary-button {
+  padding: 10px 12px;
+}
+
 .export-box .secondary-button {
   width: 100%;
 }
@@ -538,6 +571,14 @@ textarea {
 .history-item span {
   color: var(--muted);
   font-size: 13px;
+}
+
+.history-item small {
+  display: block;
+  margin-top: 6px;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .history-edit-button {
@@ -637,6 +678,11 @@ dialog form {
   }
 
   .role-box {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-grid,
+  .filters-actions {
     grid-template-columns: 1fr;
   }
 

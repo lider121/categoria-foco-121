@@ -57,6 +57,12 @@ Antes de eliminar un documento de `registros`, la app guarda una copia completa 
 
 La exportación conserva el CSV compatible con Excel y agrega descarga JSON usando el mismo rango seleccionado: todos los registros, últimos 7 días o mes actual.
 
+## Versión 1.7
+
+El historial incorpora búsqueda en tiempo real y filtros combinables por fecha desde/hasta, usuario creador y categoría. El contador de resultados se actualiza automáticamente y el botón `Limpiar filtros` vuelve a mostrar el lote completo consultado.
+
+Para cuidar el rendimiento con muchos registros, el historial consulta Firestore con límite y aplica los filtros de fecha en la consulta cuando corresponde. Los filtros de texto, usuario y categoría se aplican en memoria sobre los registros cargados.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

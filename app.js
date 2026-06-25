@@ -10,6 +10,7 @@ const firebaseConfig = {
 const STORE_ID = "121";
 const COLLECTION_NAME = "registros";
 const DELETED_LOGS_COLLECTION = "deletedLogs";
+const HISTORY_LIMIT = 200;
 
 const categories = [
   { code: "82", name: "Check-Out" },
@@ -44,18 +45,25 @@ const elements = {
   exportButton: document.querySelector("#exportButton"),
   exportJsonButton: document.querySelector("#exportJsonButton"),
   exportRange: document.querySelector("#exportRange"),
+  filterCategory: document.querySelector("#filterCategory"),
+  filterCreator: document.querySelector("#filterCreator"),
+  filterDateFrom: document.querySelector("#filterDateFrom"),
+  filterDateTo: document.querySelector("#filterDateTo"),
   form: document.querySelector("#evaluationForm"),
   formPanel: document.querySelector(".form-panel"),
   formAverage: document.querySelector("#formAverage"),
   formMessage: document.querySelector("#formMessage"),
   headerAverage: document.querySelector("#headerAverage"),
   historyList: document.querySelector("#historyList"),
+  historySearchInput: document.querySelector("#historySearchInput"),
   nameSelect: document.querySelector("#nameSelect"),
   observationsInput: document.querySelector("#observationsInput"),
   openWhatsappLink: document.querySelector("#openWhatsappLink"),
   refreshButton: document.querySelector("#refreshButton"),
   roleNotice: document.querySelector("#roleNotice"),
   roleSelect: document.querySelector("#roleSelect"),
+  clearFiltersButton: document.querySelector("#clearFiltersButton"),
+  resultsCount: document.querySelector("#resultsCount"),
   saveButton: document.querySelector("#saveButton"),
   shiftSelect: document.querySelector("#shiftSelect"),
   whatsappButton: document.querySelector("#whatsappButton"),
@@ -70,11 +78,14 @@ let previousRecord = null;
 let currentRecord = null;
 let editingRecordDate = null;
 let firestoreApi = null;
+let historyRecords = [];
+let visibleHistoryRecords = [];
 
 init();
 
 function init() {
   renderCategoryInputs();
+  renderCategoryFilterOptions();
   elements.dateInput.value = getToday();
   bindEvents();
   connectFirebase();
@@ -90,10 +101,23 @@ function bindEvents() {
   elements.cancelEditButton.addEventListener("click", cancelEditing);
   elements.exportButton.addEventListener("click", exportRecords);
   elements.exportJsonButton.addEventListener("click", exportJsonRecords);
+  elements.filterCategory.addEventListener("change", applyHistoryFilters);
+  elements.filterCreator.addEventListener("change", applyHistoryFilters);
+  elements.filterDateFrom.addEventListener("change", loadHistory);
+  elements.filterDateTo.addEventListener("change", loadHistory);
+  elements.historySearchInput.addEventListener("input", applyHistoryFilters);
+  elements.clearFiltersButton.addEventListener("click", clearHistoryFilters);
   elements.refreshButton.addEventListener("click", refreshSummary);
   elements.roleSelect.addEventListener("change", handleRoleChange);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
+}
+
+function renderCategoryFilterOptions() {
+  elements.filterCategory.innerHTML = [
+    `<option value="">Todas</option>`,
+    ...categories.map((category) => `<option value="${category.code}">${category.code} - ${category.name}</option>`)
+  ].join("");
 }
 
 function renderCategoryInputs() {
@@ -251,33 +275,54 @@ async function loadHistory() {
   if (!db) return;
 
   try {
-    const historyQuery = firestoreApi.query(
-      firestoreApi.collection(db, COLLECTION_NAME),
-      firestoreApi.orderBy("fecha", "desc"),
-      firestoreApi.limit(20)
-    );
+    const historyQuery = buildHistoryQuery();
     const snapshot = await firestoreApi.getDocs(historyQuery);
-    const records = snapshot.docs.map((item) => normalizeRecord(item.data()));
-
-    elements.historyList.innerHTML = records.length
-      ? records.map(renderHistoryItem).join("")
-      : `<p class="form-message">Sin registros todavía.</p>`;
-
-    elements.historyList.querySelectorAll("button[data-edit-date]").forEach((button) => {
-      button.addEventListener("click", () => {
-        startEditingRecord(button.dataset.editDate);
-      });
-    });
-    elements.historyList.querySelectorAll("button[data-delete-date]").forEach((button) => {
-      button.addEventListener("click", () => {
-        deleteRecord(button.dataset.deleteDate);
-      });
-    });
-    updateRoleUi();
+    historyRecords = snapshot.docs.map((item) => normalizeRecord(item.data()));
+    updateCreatorFilterOptions(historyRecords);
+    applyHistoryFilters();
   } catch (error) {
     console.error(error);
     elements.historyList.innerHTML = `<p class="form-message">No se pudo cargar el historial: ${escapeHtml(getFirestoreErrorMessage(error))}</p>`;
+    updateResultsCount(0);
   }
+}
+
+function buildHistoryQuery() {
+  const constraints = [];
+  const dateFrom = elements.filterDateFrom.value;
+  const dateTo = elements.filterDateTo.value;
+
+  if (dateFrom) constraints.push(firestoreApi.where("fecha", ">=", dateFrom));
+  if (dateTo) constraints.push(firestoreApi.where("fecha", "<=", dateTo));
+
+  constraints.push(firestoreApi.orderBy("fecha", "desc"));
+  constraints.push(firestoreApi.limit(HISTORY_LIMIT));
+
+  return firestoreApi.query(firestoreApi.collection(db, COLLECTION_NAME), ...constraints);
+}
+
+function applyHistoryFilters() {
+  visibleHistoryRecords = historyRecords.filter(matchesHistoryFilters);
+  renderHistory(visibleHistoryRecords);
+}
+
+function renderHistory(records) {
+  elements.historyList.innerHTML = records.length
+    ? records.map(renderHistoryItem).join("")
+    : `<p class="form-message">Sin registros para los filtros seleccionados.</p>`;
+
+  elements.historyList.querySelectorAll("button[data-edit-date]").forEach((button) => {
+    button.addEventListener("click", () => {
+      startEditingRecord(button.dataset.editDate);
+    });
+  });
+  elements.historyList.querySelectorAll("button[data-delete-date]").forEach((button) => {
+    button.addEventListener("click", () => {
+      deleteRecord(button.dataset.deleteDate);
+    });
+  });
+  updateResultsCount(records.length);
+  updateRoleUi();
 }
 
 async function refreshSummary() {
@@ -798,10 +843,102 @@ function clearFormValues(keepDate = true) {
   handleNameChange();
 }
 
+function updateCreatorFilterOptions(records) {
+  const selectedCreator = elements.filterCreator.value;
+  const creators = Array.from(new Set(records.map(getRecordCreator).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+
+  elements.filterCreator.innerHTML = [
+    `<option value="">Todos</option>`,
+    ...creators.map((creator) => `<option value="${escapeHtml(creator)}">${escapeHtml(creator)}</option>`)
+  ].join("");
+
+  if (creators.includes(selectedCreator)) {
+    elements.filterCreator.value = selectedCreator;
+  }
+}
+
+function matchesHistoryFilters(record) {
+  const filters = getHistoryFilters();
+
+  if (filters.dateFrom && record.fecha < filters.dateFrom) return false;
+  if (filters.dateTo && record.fecha > filters.dateTo) return false;
+  if (filters.creator && getRecordCreator(record) !== filters.creator) return false;
+  if (filters.category && !getCategoryValue(record, filters.category)) return false;
+  if (filters.search && !getSearchableRecordText(record).includes(filters.search)) return false;
+
+  return true;
+}
+
+function getHistoryFilters() {
+  return {
+    search: normalizeSearchText(elements.historySearchInput.value),
+    dateFrom: elements.filterDateFrom.value,
+    dateTo: elements.filterDateTo.value,
+    creator: elements.filterCreator.value,
+    category: elements.filterCategory.value
+  };
+}
+
+function getRecordCreator(record) {
+  return record.createdBy || record.nombre || "Sin usuario";
+}
+
+function getCategoryValue(record, code) {
+  return record.categorias.find((category) => category.codigo === code);
+}
+
+function getSelectedHistoryCategory(record) {
+  const selectedCode = elements.filterCategory.value;
+  return selectedCode ? getCategoryValue(record, selectedCode) : null;
+}
+
+function getSearchableRecordText(record) {
+  const categoryText = record.categorias
+    .map((category) => `${category.codigo} ${category.nombre} ${category.valor}`)
+    .join(" ");
+
+  return normalizeSearchText([
+    record.fecha,
+    formatDate(record.fecha),
+    record.nombre,
+    getRecordCreator(record),
+    record.turno,
+    record.promedio,
+    record.observaciones,
+    categoryText
+  ].join(" "));
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function updateResultsCount(count) {
+  const label = count === 1 ? "resultado" : "resultados";
+  elements.resultsCount.textContent = `${count} ${label}`;
+}
+
+async function clearHistoryFilters() {
+  elements.historySearchInput.value = "";
+  elements.filterDateFrom.value = "";
+  elements.filterDateTo.value = "";
+  elements.filterCreator.value = "";
+  elements.filterCategory.value = "";
+  await loadHistory();
+}
+
 function renderHistoryItem(record) {
   const date = escapeHtml(formatDate(record.fecha));
   const nombre = escapeHtml(record.nombre || "Sin nombre");
   const turno = escapeHtml(record.turno || "Sin turno");
+  const selectedCategory = getSelectedHistoryCategory(record);
+  const categoryLine = selectedCategory
+    ? `<small>${escapeHtml(selectedCategory.codigo)} - ${escapeHtml(selectedCategory.nombre)}: ${formatPercent(selectedCategory.valor)}</small>`
+    : "";
   const disabled = canEditRecords() ? "" : " disabled";
   const deleteHidden = canDeleteRecords() ? "" : " hidden";
   return `
@@ -809,6 +946,7 @@ function renderHistoryItem(record) {
       <div class="history-row">
         <div>
           <span>${date}<br />${nombre} · ${turno}</span>
+          ${categoryLine}
           <strong>${formatPercent(record.promedio)}</strong>
         </div>
         <div class="history-actions">
