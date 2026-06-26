@@ -106,6 +106,214 @@ textarea {
   box-shadow: var(--shadow);
 }
 
+.reports-panel {
+  margin: 0 clamp(16px, 4vw, 48px) 20px;
+  padding: clamp(16px, 3vw, 24px);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.reports-heading {
+  align-items: end;
+}
+
+.report-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(130px, 1fr)) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.report-filters .secondary-button {
+  min-width: 120px;
+}
+
+.report-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.report-card,
+.report-block {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.report-card {
+  min-height: 112px;
+  padding: 14px;
+}
+
+.report-card span,
+.report-block-head span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.report-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1;
+}
+
+.report-card small,
+.report-block-head small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 14px;
+}
+
+.report-block {
+  min-height: 220px;
+  padding: 14px;
+}
+
+.report-block.wide {
+  grid-column: 1 / -1;
+}
+
+.report-block-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.line-chart {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.line-chart svg {
+  display: block;
+  width: 100%;
+  min-width: 560px;
+  height: auto;
+}
+
+.line-chart line {
+  stroke: #cad3df;
+  stroke-width: 2;
+}
+
+.line-chart polyline {
+  fill: none;
+  stroke: var(--blue);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}
+
+.line-chart circle {
+  fill: var(--green);
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.line-chart text {
+  fill: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bar-chart,
+.stats-list {
+  display: grid;
+  gap: 10px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1.2fr) 58px;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bar-row span {
+  min-width: 0;
+}
+
+.bar-row strong {
+  text-align: right;
+}
+
+.bar-track {
+  height: 12px;
+  overflow: hidden;
+  background: #e8edf3;
+  border-radius: 999px;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.bar-fill.status-green {
+  background: var(--green);
+}
+
+.bar-fill.status-yellow {
+  background: var(--yellow);
+}
+
+.bar-fill.status-red {
+  background: var(--red);
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.stats-row:last-child {
+  border-bottom: 0;
+}
+
+.stats-row span,
+.stats-row strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.stats-row small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.empty-chart {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .dashboard-heading {
   margin-bottom: 16px;
 }
@@ -774,6 +982,11 @@ dialog form {
     grid-template-columns: 1fr;
   }
 
+  .report-metrics,
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
   }
@@ -797,6 +1010,24 @@ dialog form {
   .dashboard-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .reports-heading,
+  .report-block-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .report-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .bar-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bar-row strong {
+    text-align: left;
   }
 
   .traffic-grid {

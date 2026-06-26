@@ -69,7 +69,24 @@ const elements = {
   observationsInput: document.querySelector("#observationsInput"),
   openWhatsappLink: document.querySelector("#openWhatsappLink"),
   passwordInput: document.querySelector("#passwordInput"),
+  categoryAverageChart: document.querySelector("#categoryAverageChart"),
+  categoryStatsList: document.querySelector("#categoryStatsList"),
+  creatorStatsList: document.querySelector("#creatorStatsList"),
+  dateTrendChart: document.querySelector("#dateTrendChart"),
   refreshButton: document.querySelector("#refreshButton"),
+  refreshReportsButton: document.querySelector("#refreshReportsButton"),
+  reportBestDetail: document.querySelector("#reportBestDetail"),
+  reportBestPercent: document.querySelector("#reportBestPercent"),
+  reportDateFrom: document.querySelector("#reportDateFrom"),
+  reportDateTo: document.querySelector("#reportDateTo"),
+  reportLatestDate: document.querySelector("#reportLatestDate"),
+  reportOverallAverage: document.querySelector("#reportOverallAverage"),
+  reportRangeLabel: document.querySelector("#reportRangeLabel"),
+  reportsMessage: document.querySelector("#reportsMessage"),
+  reportsPanel: document.querySelector("#reportsPanel"),
+  reportTotalRecords: document.querySelector("#reportTotalRecords"),
+  reportWorstDetail: document.querySelector("#reportWorstDetail"),
+  reportWorstPercent: document.querySelector("#reportWorstPercent"),
   roleNotice: document.querySelector("#roleNotice"),
   clearFiltersButton: document.querySelector("#clearFiltersButton"),
   resultsCount: document.querySelector("#resultsCount"),
@@ -77,6 +94,7 @@ const elements = {
   sessionRole: document.querySelector("#sessionRole"),
   sessionUser: document.querySelector("#sessionUser"),
   shiftSelect: document.querySelector("#shiftSelect"),
+  monthStatsList: document.querySelector("#monthStatsList"),
   whatsappButton: document.querySelector("#whatsappButton"),
   whatsappDialog: document.querySelector("#whatsappDialog"),
   whatsappText: document.querySelector("#whatsappText"),
@@ -126,6 +144,9 @@ function bindEvents() {
   elements.historySearchInput.addEventListener("input", applyHistoryFilters);
   elements.clearFiltersButton.addEventListener("click", clearHistoryFilters);
   elements.refreshButton.addEventListener("click", refreshSummary);
+  elements.refreshReportsButton.addEventListener("click", loadReports);
+  elements.reportDateFrom.addEventListener("change", loadReports);
+  elements.reportDateTo.addEventListener("change", loadReports);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
 }
@@ -166,6 +187,7 @@ async function connectFirebase() {
     await handleDateChange();
     await loadHistory();
     await loadDashboard();
+    await loadReports();
     return;
   }
 
@@ -247,6 +269,7 @@ async function handleAuthStateChanged(user) {
     await handleDateChange();
     await loadHistory();
     await loadDashboard();
+    await loadReports();
     updateRoleUi();
     updateComputedState();
   } catch (error) {
@@ -335,6 +358,8 @@ function resetAuthenticatedState() {
   setEditMode(null);
   clearFormValues(true);
   renderDashboard(null, null);
+  renderReports([]);
+  elements.reportsPanel.classList.add("hidden");
   elements.historyList.innerHTML = `<p class="form-message">Inicia sesion para ver el historial.</p>`;
   updateResultsCount(0);
 }
@@ -424,8 +449,13 @@ function canDeleteRecords() {
   return getCurrentRole() === "admin";
 }
 
+function canViewReports() {
+  return ["supervisor", "admin"].includes(getCurrentRole());
+}
+
 function updateRoleUi() {
   const canEdit = canEditRecords();
+  elements.reportsPanel.classList.toggle("hidden", !canViewReports());
   elements.roleNotice.classList.toggle("hidden", canEdit);
   elements.historyList.querySelectorAll("[data-edit-date]").forEach((button) => {
     button.disabled = !canEdit;
@@ -527,6 +557,7 @@ function renderHistory(records) {
 async function refreshSummary() {
   await loadHistory();
   await loadDashboard();
+  await loadReports();
 }
 
 async function startEditingRecord(fecha) {
@@ -695,6 +726,244 @@ function renderDashboard(record, previous) {
   elements.dashboardCriticalList.innerHTML = critical
     .map((category) => `<li>${escapeHtml(category.nombre)} (${formatPercent(category.valor)})</li>`)
     .join("");
+}
+
+async function loadReports() {
+  if (!db || !isAuthenticated()) return;
+
+  if (!canViewReports()) {
+    elements.reportsPanel.classList.add("hidden");
+    renderReports([]);
+    return;
+  }
+
+  elements.reportsPanel.classList.remove("hidden");
+  setReportsMessage("Cargando reportes...", "info");
+
+  try {
+    const records = await getRecordsForReports();
+    renderReports(records);
+    setReportsMessage(records.length ? "" : "No hay registros para el rango seleccionado.", "warning");
+  } catch (error) {
+    console.error(error);
+    renderReports([]);
+    setReportsMessage(`No se pudieron cargar los reportes: ${getFirestoreErrorMessage(error)}`, "error");
+  }
+}
+
+async function getRecordsForReports() {
+  const constraints = [];
+  const dateFrom = elements.reportDateFrom.value;
+  const dateTo = elements.reportDateTo.value;
+
+  if (dateFrom) constraints.push(firestoreApi.where("fecha", ">=", dateFrom));
+  if (dateTo) constraints.push(firestoreApi.where("fecha", "<=", dateTo));
+
+  constraints.push(firestoreApi.orderBy("fecha", "asc"));
+
+  const reportsQuery = firestoreApi.query(firestoreApi.collection(db, COLLECTION_NAME), ...constraints);
+  const snapshot = await firestoreApi.getDocs(reportsQuery);
+  return snapshot.docs.map((item) => normalizeRecord(item.data()));
+}
+
+function renderReports(records) {
+  const summary = buildReportSummary(records);
+
+  elements.reportTotalRecords.textContent = String(summary.totalRecords);
+  elements.reportOverallAverage.textContent = formatPercent(summary.average);
+  elements.reportBestPercent.textContent = summary.best ? formatPercent(summary.best.valor) : "0%";
+  elements.reportBestDetail.textContent = summary.best ? `${summary.best.nombre} (${formatDate(summary.best.fecha)})` : "Sin datos";
+  elements.reportWorstPercent.textContent = summary.worst ? formatPercent(summary.worst.valor) : "0%";
+  elements.reportWorstDetail.textContent = summary.worst ? `${summary.worst.nombre} (${formatDate(summary.worst.fecha)})` : "Sin datos";
+  elements.reportLatestDate.textContent = summary.latestDate ? formatDate(summary.latestDate) : "Sin datos";
+  elements.reportRangeLabel.textContent = getReportRangeLabel();
+
+  renderDateTrendChart(summary.byDate);
+  renderCategoryAverageChart(summary.byCategory);
+  renderStatsList(elements.categoryStatsList, summary.byCategory, renderCategoryStatItem, "Sin categorias");
+  renderStatsList(elements.creatorStatsList, summary.byCreator, renderGroupedStatItem, "Sin usuarios");
+  renderStatsList(elements.monthStatsList, summary.byMonth, renderGroupedStatItem, "Sin meses");
+}
+
+function buildReportSummary(records) {
+  const categoryBuckets = new Map(categories.map((category) => [category.code, createReportBucket(`${category.code} - ${category.name}`)]));
+  const creatorBuckets = new Map();
+  const monthBuckets = new Map();
+  const dateBuckets = new Map();
+  const values = [];
+  let latestDate = "";
+
+  records.forEach((record) => {
+    latestDate = latestDate && latestDate > record.fecha ? latestDate : record.fecha;
+    addBucketValue(getOrCreateBucket(creatorBuckets, getRecordCreator(record)), record.promedio);
+    addBucketValue(getOrCreateBucket(monthBuckets, record.fecha.slice(0, 7)), record.promedio);
+    addBucketValue(getOrCreateBucket(dateBuckets, record.fecha), record.promedio);
+
+    record.categorias.forEach((category) => {
+      const bucket = categoryBuckets.get(category.codigo) || getOrCreateBucket(categoryBuckets, `${category.codigo} - ${category.nombre}`);
+      addBucketValue(bucket, category.valor);
+      if (Number.isNaN(category.valor)) return;
+      values.push({
+        fecha: record.fecha,
+        nombre: `${category.codigo} - ${category.nombre}`,
+        valor: category.valor
+      });
+    });
+  });
+
+  const categoryStats = Array.from(categoryBuckets.values()).map(finalizeReportBucket);
+  const creatorStats = Array.from(creatorBuckets.values()).map(finalizeReportBucket).sort((a, b) => b.average - a.average);
+  const monthStats = Array.from(monthBuckets.values()).map(finalizeReportBucket).sort((a, b) => b.label.localeCompare(a.label));
+  const dateStats = Array.from(dateBuckets.values()).map(finalizeReportBucket).sort((a, b) => a.label.localeCompare(b.label));
+
+  return {
+    average: records.length ? roundOne(records.reduce((sum, record) => sum + record.promedio, 0) / records.length) : 0,
+    best: values.length ? values.slice().sort((a, b) => b.valor - a.valor)[0] : null,
+    byCategory: categoryStats,
+    byCreator: creatorStats,
+    byDate: dateStats,
+    byMonth: monthStats,
+    latestDate,
+    totalRecords: records.length,
+    worst: values.length ? values.slice().sort((a, b) => a.valor - b.valor)[0] : null
+  };
+}
+
+function createReportBucket(label) {
+  return {
+    count: 0,
+    label,
+    max: null,
+    min: null,
+    total: 0
+  };
+}
+
+function getOrCreateBucket(map, label) {
+  if (!map.has(label)) map.set(label, createReportBucket(label));
+  return map.get(label);
+}
+
+function addBucketValue(bucket, value) {
+  if (Number.isNaN(value)) return;
+  bucket.count += 1;
+  bucket.total += value;
+  bucket.max = bucket.max === null ? value : Math.max(bucket.max, value);
+  bucket.min = bucket.min === null ? value : Math.min(bucket.min, value);
+}
+
+function finalizeReportBucket(bucket) {
+  return {
+    average: bucket.count ? roundOne(bucket.total / bucket.count) : 0,
+    count: bucket.count,
+    label: bucket.label,
+    max: bucket.max ?? 0,
+    min: bucket.min ?? 0
+  };
+}
+
+function renderDateTrendChart(points) {
+  if (!points.length) {
+    elements.dateTrendChart.innerHTML = `<p class="empty-chart">Sin datos</p>`;
+    return;
+  }
+
+  const width = 720;
+  const height = 220;
+  const padding = 26;
+  const step = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
+  const polyline = points
+    .map((point, index) => {
+      const x = points.length === 1 ? width / 2 : padding + index * step;
+      const y = height - padding - (point.average / 100) * (height - padding * 2);
+      return `${roundOne(x)},${roundOne(y)}`;
+    })
+    .join(" ");
+  const labels = points
+    .filter((_, index) => index === 0 || index === points.length - 1)
+    .map((point, index) => {
+      const x = index === 0 ? padding : width - padding;
+      return `<text x="${x}" y="${height - 5}" text-anchor="${index === 0 ? "start" : "end"}">${escapeHtml(formatDate(point.label))}</text>`;
+    })
+    .join("");
+
+  elements.dateTrendChart.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolucion de promedios por fecha">
+      <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" />
+      <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" />
+      <polyline points="${polyline}" />
+      ${points.map(renderTrendPoint).join("")}
+      ${labels}
+    </svg>
+  `;
+}
+
+function renderTrendPoint(point, index, points) {
+  const width = 720;
+  const height = 220;
+  const padding = 26;
+  const step = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
+  const x = points.length === 1 ? width / 2 : padding + index * step;
+  const y = height - padding - (point.average / 100) * (height - padding * 2);
+  return `<circle cx="${roundOne(x)}" cy="${roundOne(y)}" r="4"><title>${escapeHtml(formatDate(point.label))}: ${formatPercent(point.average)}</title></circle>`;
+}
+
+function renderCategoryAverageChart(stats) {
+  const visibleStats = stats.filter((item) => item.count > 0);
+
+  elements.categoryAverageChart.innerHTML = visibleStats.length
+    ? visibleStats.map(renderCategoryBar).join("")
+    : `<p class="empty-chart">Sin datos</p>`;
+}
+
+function renderCategoryBar(item) {
+  return `
+    <div class="bar-row">
+      <span>${escapeHtml(item.label)}</span>
+      <div class="bar-track"><div class="bar-fill status-${getCategoryStatus(item.average)}" style="width: ${Math.max(4, item.average)}%"></div></div>
+      <strong>${formatPercent(item.average)}</strong>
+    </div>
+  `;
+}
+
+function renderStatsList(container, stats, renderItem, emptyText) {
+  const visibleStats = stats.filter((item) => item.count > 0);
+  container.innerHTML = visibleStats.length
+    ? visibleStats.map(renderItem).join("")
+    : `<p class="empty-chart">${emptyText}</p>`;
+}
+
+function renderCategoryStatItem(item) {
+  return `
+    <div class="stats-row">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${formatPercent(item.average)}</strong>
+      <small>${item.count} dato(s) | min ${formatPercent(item.min)} | max ${formatPercent(item.max)}</small>
+    </div>
+  `;
+}
+
+function renderGroupedStatItem(item) {
+  return `
+    <div class="stats-row">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${formatPercent(item.average)}</strong>
+      <small>${item.count} registro(s)</small>
+    </div>
+  `;
+}
+
+function getReportRangeLabel() {
+  const from = elements.reportDateFrom.value;
+  const to = elements.reportDateTo.value;
+  if (from && to) return `${formatDate(from)} a ${formatDate(to)}`;
+  if (from) return `Desde ${formatDate(from)}`;
+  if (to) return `Hasta ${formatDate(to)}`;
+  return "Todos los registros";
+}
+
+function setReportsMessage(text, type = "info") {
+  setElementMessage(elements.reportsMessage, text, type);
 }
 
 async function exportRecords() {

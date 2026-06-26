@@ -79,6 +79,26 @@ Se reemplaza el selector temporal por inicio de sesion real con Firebase Authent
 
 Los roles se leen desde Firestore, coleccion `roles`. El documento recomendado usa como ID el UID del usuario de Authentication.
 
+## Version 2.1
+
+Se agrega la seccion `Reportes y estadisticas`, visible solo para Supervisor y Administrador. Los reportes leen datos reales desde `registros` y permiten filtrar por rango de fechas.
+
+Indicadores incluidos:
+
+- total de registros;
+- promedio general;
+- mejor porcentaje;
+- peor porcentaje;
+- ultima fecha registrada.
+
+Estadisticas incluidas:
+
+- promedio, minimo, maximo y cantidad de datos por categoria;
+- promedio y cantidad de registros por usuario creador;
+- promedio y cantidad de registros por mes;
+- grafico de evolucion por fecha;
+- grafico de promedio por categoria.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

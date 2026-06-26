@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CATEGORÍA FOCO 121</title>
     <link rel="preconnect" href="https://www.gstatic.com" />
-    <link rel="stylesheet" href="styles.css?v=2.0" />
+    <link rel="stylesheet" href="styles.css?v=2.1" />
   </head>
   <body class="auth-loading">
     <section id="loginView" class="auth-panel" aria-labelledby="loginTitle">
@@ -80,6 +80,91 @@
           <ol id="dashboardCriticalList"></ol>
         </article>
       </div>
+    </section>
+
+    <section id="reportsPanel" class="reports-panel hidden" aria-labelledby="reportsTitle">
+      <div class="section-heading reports-heading">
+        <div>
+          <p class="eyebrow">Analisis</p>
+          <h2 id="reportsTitle">Reportes y estadisticas</h2>
+        </div>
+        <div class="report-filters">
+          <label>
+            Desde
+            <input id="reportDateFrom" type="date" />
+          </label>
+          <label>
+            Hasta
+            <input id="reportDateTo" type="date" />
+          </label>
+          <button id="refreshReportsButton" class="secondary-button" type="button">Actualizar</button>
+        </div>
+      </div>
+
+      <div class="report-metrics">
+        <article class="report-card">
+          <span>Total registros</span>
+          <strong id="reportTotalRecords">0</strong>
+        </article>
+        <article class="report-card">
+          <span>Promedio general</span>
+          <strong id="reportOverallAverage">0%</strong>
+        </article>
+        <article class="report-card">
+          <span>Mejor porcentaje</span>
+          <strong id="reportBestPercent">0%</strong>
+          <small id="reportBestDetail">Sin datos</small>
+        </article>
+        <article class="report-card">
+          <span>Peor porcentaje</span>
+          <strong id="reportWorstPercent">0%</strong>
+          <small id="reportWorstDetail">Sin datos</small>
+        </article>
+        <article class="report-card">
+          <span>Ultima fecha</span>
+          <strong id="reportLatestDate">Sin datos</strong>
+        </article>
+      </div>
+
+      <div class="reports-grid">
+        <article class="report-block wide">
+          <div class="report-block-head">
+            <span>Evolucion por fecha</span>
+            <small id="reportRangeLabel">Todos los registros</small>
+          </div>
+          <div id="dateTrendChart" class="line-chart" aria-label="Grafico de evolucion por fecha"></div>
+        </article>
+
+        <article class="report-block">
+          <div class="report-block-head">
+            <span>Promedio por categoria</span>
+          </div>
+          <div id="categoryAverageChart" class="bar-chart" aria-label="Grafico de promedio por categoria"></div>
+        </article>
+
+        <article class="report-block">
+          <div class="report-block-head">
+            <span>Estadistica por categoria</span>
+          </div>
+          <div id="categoryStatsList" class="stats-list"></div>
+        </article>
+
+        <article class="report-block">
+          <div class="report-block-head">
+            <span>Estadistica por usuario</span>
+          </div>
+          <div id="creatorStatsList" class="stats-list"></div>
+        </article>
+
+        <article class="report-block">
+          <div class="report-block-head">
+            <span>Estadistica por mes</span>
+          </div>
+          <div id="monthStatsList" class="stats-list"></div>
+        </article>
+      </div>
+
+      <p id="reportsMessage" class="form-message" role="status"></p>
     </section>
 
     <main class="app-shell">
@@ -253,6 +338,6 @@
     </dialog>
     </div>
 
-    <script type="module" src="app.js?v=2.0"></script>
+    <script type="module" src="app.js?v=2.1"></script>
   </body>
 </html>
