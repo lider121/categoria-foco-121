@@ -10,7 +10,9 @@ const firebaseConfig = {
 const STORE_ID = "121";
 const COLLECTION_NAME = "registros";
 const DELETED_LOGS_COLLECTION = "deletedLogs";
+const ROLES_COLLECTION = "roles";
 const HISTORY_LIMIT = 200;
+const DEFAULT_ROLE = "user";
 
 const categories = [
   { code: "82", name: "Check-Out" },
@@ -27,6 +29,7 @@ const categories = [
 ];
 
 const elements = {
+  appView: document.querySelector("#appView"),
   averageDelta: document.querySelector("#averageDelta"),
   cancelEditButton: document.querySelector("#cancelEditButton"),
   categoriesGrid: document.querySelector("#categoriesGrid"),
@@ -42,6 +45,7 @@ const elements = {
   customNameWrap: document.querySelector("#customNameWrap"),
   dateInput: document.querySelector("#dateInput"),
   editStatus: document.querySelector("#editStatus"),
+  emailInput: document.querySelector("#emailInput"),
   exportButton: document.querySelector("#exportButton"),
   exportJsonButton: document.querySelector("#exportJsonButton"),
   exportRange: document.querySelector("#exportRange"),
@@ -56,15 +60,22 @@ const elements = {
   headerAverage: document.querySelector("#headerAverage"),
   historyList: document.querySelector("#historyList"),
   historySearchInput: document.querySelector("#historySearchInput"),
+  loginButton: document.querySelector("#loginButton"),
+  loginForm: document.querySelector("#loginForm"),
+  loginMessage: document.querySelector("#loginMessage"),
+  loginView: document.querySelector("#loginView"),
+  logoutButton: document.querySelector("#logoutButton"),
   nameSelect: document.querySelector("#nameSelect"),
   observationsInput: document.querySelector("#observationsInput"),
   openWhatsappLink: document.querySelector("#openWhatsappLink"),
+  passwordInput: document.querySelector("#passwordInput"),
   refreshButton: document.querySelector("#refreshButton"),
   roleNotice: document.querySelector("#roleNotice"),
-  roleSelect: document.querySelector("#roleSelect"),
   clearFiltersButton: document.querySelector("#clearFiltersButton"),
   resultsCount: document.querySelector("#resultsCount"),
   saveButton: document.querySelector("#saveButton"),
+  sessionRole: document.querySelector("#sessionRole"),
+  sessionUser: document.querySelector("#sessionUser"),
   shiftSelect: document.querySelector("#shiftSelect"),
   whatsappButton: document.querySelector("#whatsappButton"),
   whatsappDialog: document.querySelector("#whatsappDialog"),
@@ -74,6 +85,11 @@ const elements = {
 };
 
 let db = null;
+let auth = null;
+let authApi = null;
+let currentUser = null;
+let currentUserProfile = null;
+let currentUserRole = DEFAULT_ROLE;
 let previousRecord = null;
 let currentRecord = null;
 let editingRecordDate = null;
@@ -88,14 +104,16 @@ function init() {
   renderCategoryFilterOptions();
   elements.dateInput.value = getToday();
   bindEvents();
+  setAuthUi(false);
   connectFirebase();
-  updateRoleUi();
   updateComputedState();
 }
 
 function bindEvents() {
   elements.form.addEventListener("input", updateComputedState);
   elements.form.addEventListener("submit", saveRecord);
+  elements.loginForm.addEventListener("submit", signIn);
+  elements.logoutButton.addEventListener("click", signOut);
   elements.nameSelect.addEventListener("change", handleNameChange);
   elements.dateInput.addEventListener("change", handleDateChange);
   elements.cancelEditButton.addEventListener("click", cancelEditing);
@@ -108,7 +126,6 @@ function bindEvents() {
   elements.historySearchInput.addEventListener("input", applyHistoryFilters);
   elements.clearFiltersButton.addEventListener("click", clearHistoryFilters);
   elements.refreshButton.addEventListener("click", refreshSummary);
-  elements.roleSelect.addEventListener("change", handleRoleChange);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
 }
@@ -141,7 +158,11 @@ async function connectFirebase() {
   if (window.__CATEGORIA_FOCO_FIRESTORE__) {
     firestoreApi = window.__CATEGORIA_FOCO_FIRESTORE__;
     db = firestoreApi.db;
+    currentUser = { email: "prueba@local", displayName: "Prueba local" };
+    currentUserProfile = { name: "Prueba local", email: "prueba@local", role: "admin" };
+    currentUserRole = "admin";
     setStatus("Firebase prueba", "ready");
+    setAuthUi(true);
     await handleDateChange();
     await loadHistory();
     await loadDashboard();
@@ -150,19 +171,202 @@ async function connectFirebase() {
 
   try {
     const firebaseApp = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
+    const firebaseAuth = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js");
     const firebaseFirestore = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
     firestoreApi = firebaseFirestore;
+    authApi = firebaseAuth;
     const app = firebaseApp.initializeApp(firebaseConfig);
+    auth = firebaseAuth.getAuth(app);
     db = firebaseFirestore.getFirestore(app);
     setStatus("Firebase conectado", "ready");
-    await handleDateChange();
-    await loadHistory();
-    await loadDashboard();
+    firebaseAuth.onAuthStateChanged(auth, handleAuthStateChanged);
   } catch (error) {
     console.error(error);
     setStatus("Error Firebase", "error");
     setMessage("No se pudo conectar con Firebase. Revisa la configuración.", "error");
+    setLoginMessage("No se pudo conectar con Firebase. Revisa la configuración.", "error");
   }
+}
+
+async function signIn(event) {
+  event.preventDefault();
+
+  if (!auth || !authApi) {
+    setLoginMessage("Firebase Auth todavia no esta disponible.", "error");
+    return;
+  }
+
+  const email = elements.emailInput.value.trim();
+  const password = elements.passwordInput.value;
+
+  if (!email || !password) {
+    setLoginMessage("Ingresa correo y contrasena.", "warning");
+    return;
+  }
+
+  elements.loginButton.disabled = true;
+  setLoginMessage("Iniciando sesion...", "info");
+
+  try {
+    await authApi.signInWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    console.warn(error);
+    setLoginMessage(`No se pudo iniciar sesion: ${getAuthErrorMessage(error)}`, "error");
+  } finally {
+    elements.loginButton.disabled = false;
+  }
+}
+
+async function signOut() {
+  if (!auth || !authApi) return;
+
+  try {
+    await authApi.signOut(auth);
+  } catch (error) {
+    console.error(error);
+    setMessage(`No se pudo cerrar sesion: ${getAuthErrorMessage(error)}`, "error");
+  }
+}
+
+async function handleAuthStateChanged(user) {
+  if (!user) {
+    resetAuthenticatedState();
+    setAuthUi(false);
+    setLoginMessage("");
+    return;
+  }
+
+  currentUser = user;
+  setLoginMessage("Cargando permisos...", "info");
+
+  try {
+    currentUserProfile = await loadAuthenticatedUserProfile(user);
+    currentUserRole = currentUserProfile.role;
+    setAuthUi(true);
+    setLoginMessage("");
+    await handleDateChange();
+    await loadHistory();
+    await loadDashboard();
+    updateRoleUi();
+    updateComputedState();
+  } catch (error) {
+    console.error(error);
+    resetAuthenticatedState();
+    setAuthUi(false);
+    setLoginMessage(`No se pudo cargar el rol desde Firestore: ${getFirestoreErrorMessage(error)}`, "error");
+  }
+}
+
+async function loadAuthenticatedUserProfile(user) {
+  const uidRole = await getRoleDocument(user.uid);
+  if (uidRole) return buildUserProfile(user, uidRole);
+
+  const email = user.email?.toLowerCase() || "";
+  if (email) {
+    const emailRole = await getOptionalRoleDocument(email);
+    if (emailRole) return buildUserProfile(user, emailRole);
+
+    const queryRole = await getOptionalRoleByEmail(email);
+    if (queryRole) return buildUserProfile(user, queryRole);
+  }
+
+  return buildUserProfile(user, { role: DEFAULT_ROLE, missingRole: true });
+}
+
+async function getRoleDocument(documentId) {
+  const snapshot = await firestoreApi.getDoc(firestoreApi.doc(db, ROLES_COLLECTION, documentId));
+  return snapshot.exists() ? snapshot.data() : null;
+}
+
+async function getOptionalRoleDocument(documentId) {
+  try {
+    return await getRoleDocument(documentId);
+  } catch (error) {
+    if (error?.code === "permission-denied") return null;
+    throw error;
+  }
+}
+
+async function getRoleByEmail(email) {
+  const roleQuery = firestoreApi.query(
+    firestoreApi.collection(db, ROLES_COLLECTION),
+    firestoreApi.where("email", "==", email),
+    firestoreApi.limit(1)
+  );
+  const snapshot = await firestoreApi.getDocs(roleQuery);
+  return snapshot.empty ? null : snapshot.docs[0].data();
+}
+
+async function getOptionalRoleByEmail(email) {
+  try {
+    return await getRoleByEmail(email);
+  } catch (error) {
+    if (error?.code === "permission-denied") return null;
+    throw error;
+  }
+}
+
+function buildUserProfile(user, roleData) {
+  const role = normalizeRole(roleData.role || roleData.rol || roleData.perfil);
+
+  return {
+    email: user.email || roleData.email || "",
+    missingRole: Boolean(roleData.missingRole),
+    name: roleData.name || roleData.nombre || user.displayName || user.email || "Usuario autenticado",
+    role
+  };
+}
+
+function normalizeRole(role) {
+  const value = normalizeSearchText(role);
+  if (["admin", "administrador"].includes(value)) return "admin";
+  if (value === "supervisor") return "supervisor";
+  return DEFAULT_ROLE;
+}
+
+function resetAuthenticatedState() {
+  currentUser = null;
+  currentUserProfile = null;
+  currentUserRole = DEFAULT_ROLE;
+  previousRecord = null;
+  currentRecord = null;
+  historyRecords = [];
+  visibleHistoryRecords = [];
+  setEditMode(null);
+  clearFormValues(true);
+  renderDashboard(null, null);
+  elements.historyList.innerHTML = `<p class="form-message">Inicia sesion para ver el historial.</p>`;
+  updateResultsCount(0);
+}
+
+function setAuthUi(isAuthenticated) {
+  document.body.classList.remove("auth-loading");
+  document.body.classList.toggle("authenticated", isAuthenticated);
+  document.body.classList.toggle("unauthenticated", !isAuthenticated);
+  elements.appView.classList.toggle("hidden", !isAuthenticated);
+  elements.loginView.classList.toggle("hidden", isAuthenticated);
+
+  if (isAuthenticated) {
+    const fallbackName = currentUser?.displayName || currentUser?.email || "Usuario autenticado";
+    elements.sessionUser.textContent = currentUserProfile?.name || fallbackName;
+    elements.sessionRole.textContent = currentUserProfile?.missingRole
+      ? `${getRoleLabel()} (rol por defecto)`
+      : getRoleLabel();
+    return;
+  }
+
+  elements.sessionUser.textContent = "Sin sesion";
+  elements.sessionRole.textContent = "Rol pendiente";
+}
+
+function isAuthenticated() {
+  return Boolean(currentUser);
+}
+
+function requireAuthentication(message = "Debes iniciar sesion para usar esta funcion.") {
+  if (isAuthenticated()) return true;
+  setMessage(message, "warning");
+  return false;
 }
 
 async function handleDateChange() {
@@ -195,7 +399,7 @@ function handleRoleChange() {
 }
 
 function getCurrentRole() {
-  return elements.roleSelect.value;
+  return currentUserRole || DEFAULT_ROLE;
 }
 
 function getRoleLabel() {
@@ -208,8 +412,8 @@ function getRoleLabel() {
 }
 
 function getActorName() {
-  const evaluator = getEvaluatorName() || "Sin nombre";
-  return `${evaluator} (${getRoleLabel()})`;
+  const name = currentUserProfile?.name || currentUser?.displayName || currentUser?.email || getEvaluatorName() || "Sin nombre";
+  return `${name} (${getRoleLabel()})`;
 }
 
 function canEditRecords() {
@@ -327,6 +531,7 @@ async function refreshSummary() {
 
 async function startEditingRecord(fecha) {
   if (!db) return;
+  if (!requireAuthentication()) return;
   if (!canEditRecords()) {
     setMessage("Solo supervisor o administrador puede editar registros.", "warning");
     return;
@@ -354,6 +559,7 @@ async function startEditingRecord(fecha) {
 
 async function deleteRecord(fecha) {
   if (!db) return;
+  if (!requireAuthentication()) return;
   if (!canDeleteRecords()) {
     setMessage("Solo administrador puede eliminar registros.", "warning");
     return;
@@ -496,6 +702,7 @@ async function exportRecords() {
     setMessage("Configura Firebase antes de exportar.", "error");
     return;
   }
+  if (!requireAuthentication()) return;
 
   try {
     const range = elements.exportRange.value;
@@ -521,6 +728,7 @@ async function exportJsonRecords() {
     setMessage("Configura Firebase antes de exportar.", "error");
     return;
   }
+  if (!requireAuthentication()) return;
 
   try {
     const range = elements.exportRange.value;
@@ -630,6 +838,7 @@ async function saveRecord(event) {
     setMessage("Configura Firebase antes de guardar.", "error");
     return;
   }
+  if (!requireAuthentication()) return;
 
   const record = buildRecord();
   if (!record) return;
@@ -974,6 +1183,7 @@ async function showWhatsappMessage() {
     setMessage("Configura Firebase antes de generar WhatsApp.", "error");
     return;
   }
+  if (!requireAuthentication()) return;
 
   const fecha = elements.dateInput.value;
   if (!fecha) {
@@ -1171,11 +1381,36 @@ function setStatus(text, type) {
 }
 
 function setMessage(text, type = "info") {
-  elements.formMessage.textContent = text;
-  elements.formMessage.classList.remove("success", "error", "warning", "info");
+  setElementMessage(elements.formMessage, text, type);
+}
+
+function setLoginMessage(text, type = "info") {
+  setElementMessage(elements.loginMessage, text, type);
+}
+
+function setElementMessage(element, text, type = "info") {
+  if (!element) return;
+  element.textContent = text;
+  element.classList.remove("success", "error", "warning", "info");
   if (text) {
-    elements.formMessage.classList.add(type);
+    element.classList.add(type);
   }
+}
+
+function getAuthErrorMessage(error) {
+  const messages = {
+    "auth/invalid-credential": "correo o contrasena incorrectos.",
+    "auth/configuration-not-found": "Firebase Authentication no esta habilitado para este proyecto.",
+    "auth/invalid-email": "el correo no tiene un formato valido.",
+    "auth/missing-password": "ingresa la contrasena.",
+    "auth/network-request-failed": "no se pudo conectar con Firebase Authentication.",
+    "auth/too-many-requests": "hay demasiados intentos. Espera unos minutos y vuelve a intentar.",
+    "auth/user-disabled": "este usuario esta deshabilitado.",
+    "auth/user-not-found": "no existe un usuario con ese correo.",
+    "auth/wrong-password": "la contrasena no es correcta."
+  };
+
+  return messages[error?.code] || "revisa las credenciales y vuelve a intentar.";
 }
 
 function getFirestoreErrorMessage(error) {

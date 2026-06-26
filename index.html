@@ -5,9 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CATEGORÍA FOCO 121</title>
     <link rel="preconnect" href="https://www.gstatic.com" />
-    <link rel="stylesheet" href="styles.css?v=1.8" />
+    <link rel="stylesheet" href="styles.css?v=2.0" />
   </head>
-  <body>
+  <body class="auth-loading">
+    <section id="loginView" class="auth-panel" aria-labelledby="loginTitle">
+      <form id="loginForm" class="login-card">
+        <p class="eyebrow">Acceso seguro</p>
+        <h1 id="loginTitle">CATEGORIA FOCO 121</h1>
+        <p class="login-copy">Ingresa con correo y contrasena para cargar tu rol desde Firebase.</p>
+
+        <label>
+          Correo electronico
+          <input id="emailInput" type="email" autocomplete="email" required />
+        </label>
+
+        <label>
+          Contrasena
+          <input id="passwordInput" type="password" autocomplete="current-password" required />
+        </label>
+
+        <button id="loginButton" class="primary-button" type="submit">Iniciar sesion</button>
+        <p id="loginMessage" class="form-message" role="status"></p>
+      </form>
+    </section>
+
+    <div id="appView" class="app-view hidden">
     <header class="app-header">
       <div>
         <p class="eyebrow">Tienda 121</p>
@@ -74,15 +96,13 @@
           Editando registro existente
         </div>
 
-        <div class="role-box">
-          <label>
-            Acceso temporal
-            <select id="roleSelect">
-              <option value="user">Usuario</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="admin">Administrador</option>
-            </select>
-          </label>
+        <div class="role-box session-box">
+          <div class="session-user">
+            <span>Usuario autenticado</span>
+            <strong id="sessionUser">Sin sesion</strong>
+            <small id="sessionRole">Rol pendiente</small>
+          </div>
+          <button id="logoutButton" class="secondary-button" type="button">Cerrar sesion</button>
           <p id="roleNotice">Solo supervisor o administrador puede editar registros.</p>
         </div>
 
@@ -231,7 +251,8 @@
         </div>
       </form>
     </dialog>
+    </div>
 
-    <script type="module" src="app.js?v=1.8"></script>
+    <script type="module" src="app.js?v=2.0"></script>
   </body>
 </html>

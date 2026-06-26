@@ -31,6 +31,49 @@ body {
     var(--bg);
 }
 
+body.auth-loading #loginView,
+body.auth-loading .app-view,
+body.authenticated #loginView,
+body.unauthenticated .app-view {
+  display: none;
+}
+
+.app-view {
+  min-height: 100vh;
+}
+
+.auth-panel {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card {
+  display: grid;
+  width: min(420px, 100%);
+  gap: 14px;
+  padding: clamp(22px, 5vw, 34px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: clamp(30px, 8vw, 46px);
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.login-copy {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 button,
 input,
 select,
@@ -273,6 +316,33 @@ textarea {
   color: var(--amber);
   font-size: 13px;
   font-weight: 700;
+}
+
+.session-box {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.session-user {
+  display: grid;
+  gap: 3px;
+}
+
+.session-user span,
+.session-user small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.session-user strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.session-box p {
+  grid-column: 1 / -1;
 }
 
 .side-panel {
@@ -740,6 +810,10 @@ dialog form {
 
   .role-box {
     grid-template-columns: 1fr;
+  }
+
+  .session-box .secondary-button {
+    width: 100%;
   }
 
   .filters-grid,
