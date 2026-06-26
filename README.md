@@ -109,6 +109,18 @@ Las tablas de estadisticas alinean valores numericos a la derecha y colorean los
 - Amarillo: `50` a `69.9`
 - Rojo: `< 50`
 
+## Version 2.1.2
+
+Se rediseña la seccion de reportes con tema oscuro tipo dashboard: sidebar lateral, logo FOCO 121, usuario autenticado, menu vertical, tarjetas KPI con iconos, graficos dentro de tarjetas oscuras y tablas con divisiones sutiles.
+
+La vista mantiene los graficos existentes con mejor presentacion visual:
+
+- evolucion por fecha con barras de cantidad y linea de promedio diario;
+- promedio por categoria con barras horizontales ordenadas de mayor a menor;
+- tablas con promedios alineados a la derecha y coloreados por desempeno.
+
+Los reportes siguen visibles solo para Supervisor y Administrador.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

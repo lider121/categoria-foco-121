@@ -80,11 +80,16 @@ const elements = {
   reportDateFrom: document.querySelector("#reportDateFrom"),
   reportDateTo: document.querySelector("#reportDateTo"),
   reportLatestDate: document.querySelector("#reportLatestDate"),
+  reportLatestHint: document.querySelector("#reportLatestHint"),
   reportOverallAverage: document.querySelector("#reportOverallAverage"),
   reportRangeLabel: document.querySelector("#reportRangeLabel"),
+  reportsNav: document.querySelector(".reports-nav"),
   reportsMessage: document.querySelector("#reportsMessage"),
   reportsPanel: document.querySelector("#reportsPanel"),
   reportTotalRecords: document.querySelector("#reportTotalRecords"),
+  reportUserInitials: document.querySelector("#reportUserInitials"),
+  reportUserName: document.querySelector("#reportUserName"),
+  reportUserRole: document.querySelector("#reportUserRole"),
   reportWorstDetail: document.querySelector("#reportWorstDetail"),
   reportWorstPercent: document.querySelector("#reportWorstPercent"),
   roleNotice: document.querySelector("#roleNotice"),
@@ -147,8 +152,37 @@ function bindEvents() {
   elements.refreshReportsButton.addEventListener("click", loadReports);
   elements.reportDateFrom.addEventListener("change", loadReports);
   elements.reportDateTo.addEventListener("change", loadReports);
+  elements.reportsNav.addEventListener("click", handleReportNavAction);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
+}
+
+function handleReportNavAction(event) {
+  const button = event.target.closest("[data-report-action]");
+  if (!button) return;
+
+  const action = button.dataset.reportAction;
+  const scrollOptions = { behavior: "smooth", block: "start" };
+
+  if (action === "dashboard") {
+    document.querySelector(".dashboard-panel")?.scrollIntoView(scrollOptions);
+  } else if (action === "new") {
+    elements.formPanel.scrollIntoView(scrollOptions);
+  } else if (action === "history") {
+    elements.historyList.scrollIntoView(scrollOptions);
+  } else if (action === "reports") {
+    elements.reportsPanel.scrollIntoView(scrollOptions);
+  } else if (action === "whatsapp") {
+    showWhatsappMessage();
+  } else if (action === "csv") {
+    exportRecords();
+  } else if (action === "json") {
+    exportJsonRecords();
+  } else if (action === "logout") {
+    signOut();
+  } else {
+    setReportsMessage("Funcion preparada para una version futura.", "info");
+  }
 }
 
 function renderCategoryFilterOptions() {
@@ -377,11 +411,32 @@ function setAuthUi(isAuthenticated) {
     elements.sessionRole.textContent = currentUserProfile?.missingRole
       ? `${getRoleLabel()} (rol por defecto)`
       : getRoleLabel();
+    updateReportsUserCard();
     return;
   }
 
   elements.sessionUser.textContent = "Sin sesion";
   elements.sessionRole.textContent = "Rol pendiente";
+  updateReportsUserCard();
+}
+
+function updateReportsUserCard() {
+  const name = currentUserProfile?.name || currentUser?.displayName || currentUser?.email || "Usuario";
+  const role = currentUser ? getRoleLabel() : "Rol";
+
+  elements.reportUserName.textContent = name;
+  elements.reportUserRole.textContent = role;
+  elements.reportUserInitials.textContent = getInitials(name);
+}
+
+function getInitials(name) {
+  const words = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!words.length) return "--";
+  return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase();
 }
 
 function isAuthenticated() {
@@ -776,6 +831,7 @@ function renderReports(records) {
   elements.reportWorstPercent.textContent = summary.worst ? formatPercent(summary.worst.valor) : "0%";
   elements.reportWorstDetail.textContent = summary.worst ? `${summary.worst.nombre} (${formatDate(summary.worst.fecha)})` : "Sin datos";
   elements.reportLatestDate.textContent = summary.latestDate ? formatDate(summary.latestDate) : "Sin datos";
+  elements.reportLatestHint.textContent = summary.latestDate ? getDaysAgoLabel(summary.latestDate) : "Registro mas reciente";
   elements.reportRangeLabel.textContent = getReportRangeLabel();
 
   renderDateTrendChart(summary.byDate);
@@ -916,6 +972,12 @@ function renderDateTrendChart(points) {
       <span><i class="legend-bar"></i>Cantidad de registros</span>
     </div>
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolucion de promedio diario y cantidad de registros por fecha">
+      <defs>
+        <linearGradient id="reportBarGradient" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#a9d2ff" />
+          <stop offset="100%" stop-color="#3f8df5" />
+        </linearGradient>
+      </defs>
       ${leftTicks}
       <line class="axis-line" x1="${left}" y1="${top}" x2="${left}" y2="${top + chartHeight}" />
       <line class="axis-line" x1="${width - right}" y1="${top}" x2="${width - right}" y2="${top + chartHeight}" />
@@ -1019,6 +1081,13 @@ function getReportRangeLabel() {
   if (from) return `Desde ${formatDate(from)}`;
   if (to) return `Hasta ${formatDate(to)}`;
   return "Todos los registros";
+}
+
+function getDaysAgoLabel(fecha) {
+  const today = new Date(`${getToday()}T00:00:00`);
+  const target = new Date(`${fecha}T00:00:00`);
+  const days = Math.max(0, Math.round((today - target) / 86400000));
+  return days === 1 ? "Hace 1 dia" : `Hace ${days} dias`;
 }
 
 function setReportsMessage(text, type = "info") {
