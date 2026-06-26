@@ -65,6 +65,12 @@ El historial incorpora búsqueda en tiempo real y filtros combinables por fecha 
 
 Para cuidar el rendimiento con muchos registros, el historial consulta Firestore con límite y aplica los filtros de fecha en la consulta cuando corresponde. Los filtros de texto, usuario y categoría se aplican en memoria sobre los registros cargados.
 
+## Versión 1.8
+
+La interfaz queda pulida para pruebas con usuarios reales: mensajes visuales de éxito, error y aviso; botones y controles más cómodos en móvil; foco accesible; textos de acciones más claros; y revisión de consola/sintaxis. Se mantiene el acceso temporal por rol mientras se prepara una futura autenticación real.
+
+Estado recomendado para pruebas: registro diario, dashboard, historial, filtros, edición, exportación CSV/JSON y WhatsApp están listos para uso controlado. La eliminación con respaldo requiere que las reglas de `deletedLogs` del bloque inferior estén publicadas en Firebase Console.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

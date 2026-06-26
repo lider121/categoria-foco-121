@@ -161,7 +161,7 @@ async function connectFirebase() {
   } catch (error) {
     console.error(error);
     setStatus("Error Firebase", "error");
-    setMessage("No se pudo conectar con Firebase. Revisa la configuración.");
+    setMessage("No se pudo conectar con Firebase. Revisa la configuración.", "error");
   }
 }
 
@@ -220,11 +220,6 @@ function canDeleteRecords() {
   return getCurrentRole() === "admin";
 }
 
-function assertFutureDeletePermission() {
-  // Futuro v1.x: antes de eliminar registros, exigir canDeleteRecords() y autenticación real de administrador.
-  return canDeleteRecords();
-}
-
 function updateRoleUi() {
   const canEdit = canEditRecords();
   elements.roleNotice.classList.toggle("hidden", canEdit);
@@ -248,10 +243,10 @@ async function loadRecordForDate(fecha) {
 
     currentRecord = record;
     fillForm(record);
-    setMessage("Ya existe un registro para esta fecha. No se creará un segundo registro.");
+    setMessage("Ya existe un registro para esta fecha. Puedes abrirlo desde el historial si necesitas revisarlo.", "warning");
   } catch (error) {
     console.error(error);
-    setMessage(`No se pudo comprobar el registro de la fecha: ${getFirestoreErrorMessage(error)}`);
+    setMessage(`No se pudo comprobar el registro de la fecha: ${getFirestoreErrorMessage(error)}`, "error");
   }
 }
 
@@ -333,14 +328,14 @@ async function refreshSummary() {
 async function startEditingRecord(fecha) {
   if (!db) return;
   if (!canEditRecords()) {
-    setMessage("Solo supervisor o administrador puede editar registros.");
+    setMessage("Solo supervisor o administrador puede editar registros.", "warning");
     return;
   }
 
   try {
     const record = await getRecordByDate(fecha);
     if (!record) {
-      setMessage("No se encontró el registro seleccionado.");
+      setMessage("No se encontró el registro seleccionado.", "error");
       return;
     }
 
@@ -349,18 +344,18 @@ async function startEditingRecord(fecha) {
     await loadPreviousRecord(record.fecha);
     setEditMode(record.fecha);
     updateComputedState();
-    setMessage("Editando registro existente. Al guardar se actualizará el mismo documento.");
+    setMessage("Modo edición activo. Al guardar se actualizará este mismo documento.", "info");
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
     console.error(error);
-    setMessage(`No se pudo abrir el registro para edición: ${getFirestoreErrorMessage(error)}`);
+    setMessage(`No se pudo abrir el registro para edición: ${getFirestoreErrorMessage(error)}`, "error");
   }
 }
 
 async function deleteRecord(fecha) {
   if (!db) return;
   if (!canDeleteRecords()) {
-    setMessage("Solo administrador puede eliminar registros.");
+    setMessage("Solo administrador puede eliminar registros.", "warning");
     return;
   }
 
@@ -372,7 +367,7 @@ async function deleteRecord(fecha) {
     const snapshot = await firestoreApi.getDoc(recordRef);
 
     if (!snapshot.exists()) {
-      setMessage("No se encontro el registro para eliminar.");
+      setMessage("No se encontró el registro para eliminar.", "error");
       await refreshSummary();
       return;
     }
@@ -381,7 +376,7 @@ async function deleteRecord(fecha) {
       await saveDeletedLog(fecha, snapshot.data());
     } catch (backupError) {
       console.error(backupError);
-      setMessage(getDeletedLogPermissionMessage(backupError));
+      setMessage(getDeletedLogPermissionMessage(backupError), "error");
       return;
     }
 
@@ -399,11 +394,11 @@ async function deleteRecord(fecha) {
       updateComputedState();
     }
 
-    setMessage("Registro eliminado correctamente.");
+    setMessage("Registro eliminado correctamente. Se actualizó el historial y el dashboard.", "success");
     await refreshSummary();
   } catch (error) {
     console.error(error);
-    setMessage(`No se pudo eliminar el registro: ${getFirestoreErrorMessage(error)}`);
+    setMessage(`No se pudo eliminar el registro: ${getFirestoreErrorMessage(error)}`, "error");
   }
 }
 
@@ -430,7 +425,7 @@ async function saveDeletedLog(documentId, deletedData) {
 
 function cancelEditing() {
   setEditMode(null);
-  setMessage("Edición cancelada.");
+  setMessage("Edición cancelada. El formulario vuelve al modo de nuevo registro.", "info");
 }
 
 function setEditMode(fecha) {
@@ -498,7 +493,7 @@ function renderDashboard(record, previous) {
 
 async function exportRecords() {
   if (!db) {
-    setMessage("Configura Firebase antes de exportar.");
+    setMessage("Configura Firebase antes de exportar.", "error");
     return;
   }
 
@@ -507,23 +502,23 @@ async function exportRecords() {
     const records = await getRecordsForExport(range);
 
     if (!records.length) {
-      setMessage("No hay registros para exportar en el rango seleccionado.");
+      setMessage("No hay registros para exportar en el rango seleccionado.", "warning");
       return;
     }
 
     const csv = buildCsv(records);
     const filename = `categoria-foco-121-${range}-${getToday()}.csv`;
     downloadCsv(csv, filename);
-    setMessage(`CSV generado correctamente: ${records.length} registro(s).`);
+    setMessage(`CSV generado correctamente: ${records.length} registro(s).`, "success");
   } catch (error) {
     console.error(error);
-    setMessage(`No se pudo exportar: ${getFirestoreErrorMessage(error)}`);
+    setMessage(`No se pudo exportar CSV: ${getFirestoreErrorMessage(error)}`, "error");
   }
 }
 
 async function exportJsonRecords() {
   if (!db) {
-    setMessage("Configura Firebase antes de exportar.");
+    setMessage("Configura Firebase antes de exportar.", "error");
     return;
   }
 
@@ -532,17 +527,17 @@ async function exportJsonRecords() {
     const records = await getRecordsForExport(range);
 
     if (!records.length) {
-      setMessage("No hay registros para exportar en el rango seleccionado.");
+      setMessage("No hay registros para exportar en el rango seleccionado.", "warning");
       return;
     }
 
     const json = JSON.stringify(records, null, 2);
     const filename = `categoria-foco-121-${range}-${getToday()}.json`;
     downloadJson(json, filename);
-    setMessage(`JSON generado correctamente: ${records.length} registro(s).`);
+    setMessage(`JSON generado correctamente: ${records.length} registro(s).`, "success");
   } catch (error) {
     console.error(error);
-    setMessage(`No se pudo exportar JSON: ${getFirestoreErrorMessage(error)}`);
+    setMessage(`No se pudo exportar JSON: ${getFirestoreErrorMessage(error)}`, "error");
   }
 }
 
@@ -632,7 +627,7 @@ async function saveRecord(event) {
   event.preventDefault();
 
   if (!db) {
-    setMessage("Configura Firebase antes de guardar.");
+    setMessage("Configura Firebase antes de guardar.", "error");
     return;
   }
 
@@ -650,7 +645,7 @@ async function saveRecord(event) {
 
     if (existingRecord.exists()) {
       currentRecord = normalizeRecord(existingRecord.data());
-      setMessage("El registro ya existe para esta fecha. No se creó un segundo registro.");
+      setMessage("El registro ya existe para esta fecha. No se creó un segundo registro.", "warning");
       return;
     }
 
@@ -664,14 +659,14 @@ async function saveRecord(event) {
     });
 
     currentRecord = record;
-    setMessage("Registro guardado correctamente");
+    setMessage("Registro guardado correctamente. El historial y el dashboard ya están actualizados.", "success");
     await loadPreviousRecord(record.fecha);
     await loadHistory();
     await loadDashboard();
     updateComputedState();
   } catch (error) {
     console.error(error);
-    setMessage(`Error al guardar en Firestore: ${getFirestoreErrorMessage(error)}`);
+    setMessage(`Error al guardar en Firestore: ${getFirestoreErrorMessage(error)}`, "error");
   }
 }
 
@@ -680,7 +675,7 @@ async function updateExistingRecord(record) {
   const existingRecord = await firestoreApi.getDoc(recordRef);
 
   if (!existingRecord.exists()) {
-    setMessage("No se encontró el registro original para actualizar.");
+    setMessage("No se encontró el registro original para actualizar.", "error");
     return;
   }
 
@@ -712,7 +707,7 @@ async function updateExistingRecord(record) {
   await firestoreApi.setDoc(recordRef, updatedRecord);
 
   currentRecord = normalizeRecord(updatedRecord);
-  setMessage("Registro actualizado correctamente.");
+  setMessage("Registro actualizado correctamente. Se mantuvo el mismo documento.", "success");
   await loadPreviousRecord(editingRecordDate);
   await refreshSummary();
   setEditMode(editingRecordDate);
@@ -727,27 +722,27 @@ function buildRecord() {
   const observaciones = elements.observationsInput.value.trim();
 
   if (!elements.dateInput.value) {
-    setMessage("Selecciona una fecha.");
+    setMessage("Selecciona una fecha.", "warning");
     return null;
   }
 
   if (!nombre) {
-    setMessage("Selecciona un nombre.");
+    setMessage("Selecciona un nombre.", "warning");
     return null;
   }
 
   if (!turno) {
-    setMessage("Selecciona un turno.");
+    setMessage("Selecciona un turno.", "warning");
     return null;
   }
 
   if (values.some((item) => Number.isNaN(item.valor))) {
-    setMessage("Todas las categorías deben tener un valor numérico.");
+    setMessage("Todas las categorías deben tener un valor numérico.", "warning");
     return null;
   }
 
   if (values.some((item) => item.valor < 0 || item.valor > 100)) {
-    setMessage("Los porcentajes deben estar entre 0 y 100.");
+    setMessage("Los porcentajes deben estar entre 0 y 100.", "warning");
     return null;
   }
 
@@ -976,20 +971,20 @@ function renderHistoryItem(record) {
 
 async function showWhatsappMessage() {
   if (!db) {
-    setMessage("Configura Firebase antes de generar WhatsApp.");
+    setMessage("Configura Firebase antes de generar WhatsApp.", "error");
     return;
   }
 
   const fecha = elements.dateInput.value;
   if (!fecha) {
-    setMessage("Selecciona una fecha para generar WhatsApp.");
+    setMessage("Selecciona una fecha para generar WhatsApp.", "warning");
     return;
   }
 
   try {
     const record = await getRecordByDate(fecha);
     if (!record) {
-      setMessage("No existe un registro guardado para la fecha seleccionada.");
+      setMessage("No existe un registro guardado para la fecha seleccionada.", "warning");
       return;
     }
 
@@ -1000,11 +995,11 @@ async function showWhatsappMessage() {
     elements.whatsappText.value = message;
     elements.openWhatsappLink.href = whatsappUrl;
     const copied = await copyTextToClipboard(message);
-    setMessage(copied ? "Mensaje WhatsApp generado correctamente y copiado al portapapeles." : "Mensaje WhatsApp generado correctamente. Usa Copiar mensaje si WhatsApp no pega el texto.");
+    setMessage(copied ? "Mensaje WhatsApp generado y copiado al portapapeles." : "Mensaje WhatsApp generado. Usa Copiar mensaje si WhatsApp no pega el texto.", "success");
     elements.whatsappDialog.showModal();
   } catch (error) {
     console.error(error);
-    setMessage(`No se pudo generar WhatsApp: ${getFirestoreErrorMessage(error)}`);
+    setMessage(`No se pudo generar WhatsApp: ${getFirestoreErrorMessage(error)}`, "error");
   }
 }
 
@@ -1175,8 +1170,12 @@ function setStatus(text, type) {
   elements.connectionStatus.className = `status-badge ${type}`;
 }
 
-function setMessage(text) {
+function setMessage(text, type = "info") {
   elements.formMessage.textContent = text;
+  elements.formMessage.classList.remove("success", "error", "warning", "info");
+  if (text) {
+    elements.formMessage.classList.add(type);
+  }
 }
 
 function getFirestoreErrorMessage(error) {
