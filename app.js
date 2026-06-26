@@ -868,48 +868,101 @@ function renderDateTrendChart(points) {
     return;
   }
 
-  const width = 720;
-  const height = 220;
-  const padding = 26;
-  const step = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
-  const polyline = points
-    .map((point, index) => {
-      const x = points.length === 1 ? width / 2 : padding + index * step;
-      const y = height - padding - (point.average / 100) * (height - padding * 2);
-      return `${roundOne(x)},${roundOne(y)}`;
+  const width = 760;
+  const height = 300;
+  const left = 46;
+  const right = 48;
+  const top = 28;
+  const bottom = 48;
+  const chartWidth = width - left - right;
+  const chartHeight = height - top - bottom;
+  const maxCount = Math.max(...points.map((point) => point.count), 1);
+  const slot = chartWidth / points.length;
+  const barWidth = Math.min(34, slot * 0.52);
+  const pointPositions = points.map((point, index) => {
+    const x = left + slot * index + slot / 2;
+    const percentY = top + chartHeight - (point.average / 100) * chartHeight;
+    const countHeight = (point.count / maxCount) * chartHeight;
+    const barX = x - barWidth / 2;
+    const barY = top + chartHeight - countHeight;
+
+    return { ...point, barX, barY, barWidth, countHeight, percentY, x };
+  });
+  const linePath = buildSmoothPath(pointPositions);
+  const leftTicks = [100, 75, 50, 25, 0]
+    .map((tick) => {
+      const y = top + chartHeight - (tick / 100) * chartHeight;
+      return `
+        <line class="chart-grid-line" x1="${left}" y1="${roundOne(y)}" x2="${width - right}" y2="${roundOne(y)}" />
+        <text class="axis-label left-axis" x="${left - 10}" y="${roundOne(y + 4)}" text-anchor="end">${tick}%</text>
+      `;
     })
-    .join(" ");
-  const labels = points
-    .filter((_, index) => index === 0 || index === points.length - 1)
-    .map((point, index) => {
-      const x = index === 0 ? padding : width - padding;
-      return `<text x="${x}" y="${height - 5}" text-anchor="${index === 0 ? "start" : "end"}">${escapeHtml(formatDate(point.label))}</text>`;
+    .join("");
+  const countTicks = [maxCount, Math.ceil(maxCount / 2), 0]
+    .filter((tick, index, array) => array.indexOf(tick) === index)
+    .map((tick) => {
+      const y = top + chartHeight - (tick / maxCount) * chartHeight;
+      return `<text class="axis-label right-axis" x="${width - right + 10}" y="${roundOne(y + 4)}">${tick}</text>`;
     })
+    .join("");
+  const labels = pointPositions
+    .filter((_, index) => index === 0 || index === pointPositions.length - 1)
+    .map((point, index) => `<text class="axis-label date-axis" x="${roundOne(point.x)}" y="${height - 14}" text-anchor="${index === 0 ? "start" : "end"}">${escapeHtml(formatDate(point.label))}</text>`)
     .join("");
 
   elements.dateTrendChart.innerHTML = `
-    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolucion de promedios por fecha">
-      <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" />
-      <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" />
-      <polyline points="${polyline}" />
-      ${points.map(renderTrendPoint).join("")}
+    <div class="chart-legend" aria-hidden="true">
+      <span><i class="legend-line"></i>Promedio diario (%)</span>
+      <span><i class="legend-bar"></i>Cantidad de registros</span>
+    </div>
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolucion de promedio diario y cantidad de registros por fecha">
+      ${leftTicks}
+      <line class="axis-line" x1="${left}" y1="${top}" x2="${left}" y2="${top + chartHeight}" />
+      <line class="axis-line" x1="${width - right}" y1="${top}" x2="${width - right}" y2="${top + chartHeight}" />
+      <line class="axis-line" x1="${left}" y1="${top + chartHeight}" x2="${width - right}" y2="${top + chartHeight}" />
+      ${countTicks}
+      ${pointPositions.map(renderTrendBar).join("")}
+      <path class="trend-line" d="${linePath}" />
+      ${pointPositions.map(renderTrendPoint).join("")}
       ${labels}
     </svg>
   `;
 }
 
-function renderTrendPoint(point, index, points) {
-  const width = 720;
-  const height = 220;
-  const padding = 26;
-  const step = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
-  const x = points.length === 1 ? width / 2 : padding + index * step;
-  const y = height - padding - (point.average / 100) * (height - padding * 2);
-  return `<circle cx="${roundOne(x)}" cy="${roundOne(y)}" r="4"><title>${escapeHtml(formatDate(point.label))}: ${formatPercent(point.average)}</title></circle>`;
+function buildSmoothPath(points) {
+  if (points.length === 1) return `M ${roundOne(points[0].x)} ${roundOne(points[0].percentY)}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${roundOne(point.x)} ${roundOne(point.percentY)}`;
+
+    const previous = points[index - 1];
+    const controlDistance = (point.x - previous.x) * 0.45;
+    const c1x = previous.x + controlDistance;
+    const c2x = point.x - controlDistance;
+    return `${path} C ${roundOne(c1x)} ${roundOne(previous.percentY)}, ${roundOne(c2x)} ${roundOne(point.percentY)}, ${roundOne(point.x)} ${roundOne(point.percentY)}`;
+  }, "");
+}
+
+function renderTrendBar(point) {
+  return `
+    <rect class="count-bar" x="${roundOne(point.barX)}" y="${roundOne(point.barY)}" width="${roundOne(point.barWidth)}" height="${roundOne(point.countHeight)}" rx="4">
+      <title>${escapeHtml(formatDate(point.label))} | Promedio: ${formatPercent(point.average)} | Registros: ${point.count}</title>
+    </rect>
+  `;
+}
+
+function renderTrendPoint(point) {
+  return `
+    <circle class="trend-point" cx="${roundOne(point.x)}" cy="${roundOne(point.percentY)}" r="5">
+      <title>${escapeHtml(formatDate(point.label))} | Promedio: ${formatPercent(point.average)} | Registros: ${point.count}</title>
+    </circle>
+  `;
 }
 
 function renderCategoryAverageChart(stats) {
-  const visibleStats = stats.filter((item) => item.count > 0);
+  const visibleStats = stats
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.average - a.average);
 
   elements.categoryAverageChart.innerHTML = visibleStats.length
     ? visibleStats.map(renderCategoryBar).join("")
@@ -918,10 +971,10 @@ function renderCategoryAverageChart(stats) {
 
 function renderCategoryBar(item) {
   return `
-    <div class="bar-row">
+    <div class="bar-row" title="${escapeHtml(item.label)} | Promedio: ${formatPercent(item.average)} | Registros: ${item.count}">
       <span>${escapeHtml(item.label)}</span>
-      <div class="bar-track"><div class="bar-fill status-${getCategoryStatus(item.average)}" style="width: ${Math.max(4, item.average)}%"></div></div>
-      <strong>${formatPercent(item.average)}</strong>
+      <div class="bar-track"><div class="bar-fill performance-${getPerformanceStatus(item.average)}" style="width: ${Math.max(4, item.average)}%"></div></div>
+      <strong class="stat-value performance-${getPerformanceStatus(item.average)}">${formatPercent(item.average)}</strong>
     </div>
   `;
 }
@@ -937,7 +990,7 @@ function renderCategoryStatItem(item) {
   return `
     <div class="stats-row">
       <span>${escapeHtml(item.label)}</span>
-      <strong>${formatPercent(item.average)}</strong>
+      <strong class="stat-value performance-${getPerformanceStatus(item.average)}">${formatPercent(item.average)}</strong>
       <small>${item.count} dato(s) | min ${formatPercent(item.min)} | max ${formatPercent(item.max)}</small>
     </div>
   `;
@@ -947,10 +1000,16 @@ function renderGroupedStatItem(item) {
   return `
     <div class="stats-row">
       <span>${escapeHtml(item.label)}</span>
-      <strong>${formatPercent(item.average)}</strong>
+      <strong class="stat-value performance-${getPerformanceStatus(item.average)}">${formatPercent(item.average)}</strong>
       <small>${item.count} registro(s)</small>
     </div>
   `;
+}
+
+function getPerformanceStatus(value) {
+  if (value >= 70) return "green";
+  if (value >= 50) return "yellow";
+  return "red";
 }
 
 function getReportRangeLabel() {

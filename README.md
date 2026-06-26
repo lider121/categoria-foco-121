@@ -99,6 +99,16 @@ Estadisticas incluidas:
 - grafico de evolucion por fecha;
 - grafico de promedio por categoria.
 
+## Version 2.1.1
+
+Se mejora la visualizacion de reportes. El grafico de evolucion ahora combina barras de cantidad de registros por fecha con una linea suavizada de promedio diario, puntos visibles, leyenda y tooltips. El grafico de promedio por categoria se ordena de mayor a menor, usa barras horizontales y colorea el desempeno con verde, amarillo y rojo.
+
+Las tablas de estadisticas alinean valores numericos a la derecha y colorean los promedios con la misma escala de desempeno:
+
+- Verde: `>= 70`
+- Amarillo: `50` a `69.9`
+- Rojo: `< 50`
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.
