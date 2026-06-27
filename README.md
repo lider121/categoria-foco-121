@@ -121,6 +121,14 @@ La vista mantiene los graficos existentes con mejor presentacion visual:
 
 Los reportes siguen visibles solo para Supervisor y Administrador.
 
+## Version 2.2
+
+Se reemplaza el estilo oscuro por un rediseño claro, simple y ordenado para toda la aplicacion. Reportes vuelve a usar fondo claro, tarjetas blancas, bordes grises suaves y azul como color principal.
+
+La seccion de reportes queda organizada con KPIs superiores en tarjetas iguales, grafico de evolucion con mas ancho, grafico por categoria acomodado segun espacio disponible y tablas al final en una grilla responsive. En movil la interfaz usa una sola columna, botones amplios y evita scroll horizontal de pagina.
+
+No se modifica la logica de Firebase Authentication, roles, dashboard, historial, filtros, edicion, eliminacion con respaldo, exportacion CSV/JSON ni WhatsApp.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.
