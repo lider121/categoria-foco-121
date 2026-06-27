@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.2.1" />
+    <link rel="stylesheet" href="styles.css?v=2.2.2" />
   </head>
   <body class="auth-loading">
     <section id="loginView" class="auth-panel" aria-labelledby="loginTitle">
@@ -49,14 +49,14 @@
           </div>
 
           <nav class="reports-nav">
-            <button class="active" type="button" data-report-action="dashboard"><i data-lucide="layout-dashboard"></i>Dashboard</button>
-            <button type="button" data-report-action="new"><i data-lucide="plus-square"></i>Nuevo registro</button>
-            <button type="button" data-report-action="history"><i data-lucide="list"></i>Historial</button>
-            <button type="button" data-report-action="reports"><i data-lucide="tag"></i>Reportes</button>
-            <button type="button" data-report-action="csv"><i data-lucide="download"></i>Exportar</button>
-            <button type="button" data-report-action="whatsapp"><i data-lucide="message-circle"></i>WhatsApp</button>
-            <button type="button" data-report-action="settings"><i data-lucide="settings"></i>Configuracion</button>
-            <button class="danger" type="button" data-report-action="logout"><i data-lucide="log-out"></i>Cerrar sesion</button>
+            <button class="active" type="button" data-report-action="dashboard" data-label="Dashboard"><i data-lucide="layout-dashboard"></i>Dashboard</button>
+            <button type="button" data-report-action="new" data-label="Nuevo registro"><i data-lucide="plus-square"></i>Nuevo registro</button>
+            <button type="button" data-report-action="history" data-label="Historial"><i data-lucide="list"></i>Historial</button>
+            <button type="button" data-report-action="reports" data-label="Reportes"><i data-lucide="tag"></i>Reportes</button>
+            <button type="button" data-report-action="csv" data-label="Exportar"><i data-lucide="download"></i>Exportar</button>
+            <button type="button" data-report-action="whatsapp" data-label="WhatsApp"><i data-lucide="message-circle"></i>WhatsApp</button>
+            <button type="button" data-report-action="settings" data-label="Configuración"><i data-lucide="settings"></i>Configuracion</button>
+            <button class="danger" type="button" data-report-action="logout" data-label="Cerrar sesión"><i data-lucide="log-out"></i>Cerrar sesion</button>
           </nav>
 
           <div class="reports-sidebar-foot">
@@ -71,10 +71,6 @@
           <div>
             <h1 id="dashboardTitle">Dashboard</h1>
             <p>Resumen general y análisis del rendimiento</p>
-          </div>
-          <div class="score-pill">
-            <span>Último registro</span>
-            <strong id="dashboardDate">Sin registros</strong>
           </div>
         </header>
 
@@ -110,6 +106,12 @@
               <ol id="dashboardCriticalList"></ol>
             </article>
 
+            <article class="dashboard-card latest-dashboard">
+              <span class="kpi-icon"><i data-lucide="calendar-days"></i></span>
+              <small>Último registro</small>
+              <strong id="dashboardDate">Sin registros</strong>
+            </article>
+
             <article class="dashboard-card total-dashboard">
               <span class="kpi-icon"><i data-lucide="clipboard-list"></i></span>
               <strong id="dashboardTotalRecords">0</strong>
@@ -136,29 +138,6 @@
               </label>
               <button id="refreshReportsButton" class="secondary-button" type="button">Actualizar</button>
             </div>
-          </div>
-
-          <div class="reports-grid">
-            <article class="report-block wide">
-              <div class="report-block-head">
-                <div>
-                  <span>Evolución por fecha</span>
-                  <small>Cantidad de registros y promedio diario</small>
-                </div>
-                <small id="reportRangeLabel">Todos los registros</small>
-              </div>
-              <div id="dateTrendChart" class="combo-chart" aria-label="Grafico de evolucion por fecha"></div>
-            </article>
-
-            <article class="report-block category-chart-card">
-              <div class="report-block-head">
-                <div>
-                  <span>Promedio por categoría</span>
-                  <small>Ordenado de mayor a menor promedio</small>
-                </div>
-              </div>
-              <div id="categoryAverageChart" class="bar-chart" aria-label="Grafico de promedio por categoria"></div>
-            </article>
           </div>
 
           <div class="report-metrics">
@@ -204,10 +183,51 @@
             </article>
           </div>
 
-          <div class="stats-source" aria-hidden="true">
-            <div id="categoryStatsList" class="stats-list"></div>
-            <div id="creatorStatsList" class="stats-list"></div>
-            <div id="monthStatsList" class="stats-list"></div>
+          <div class="reports-grid">
+            <article class="report-block wide">
+              <div class="report-block-head">
+                <div>
+                  <span>Evolución por fecha</span>
+                  <small>Cantidad de registros y promedio diario</small>
+                </div>
+                <small id="reportRangeLabel">Todos los registros</small>
+              </div>
+              <div id="dateTrendChart" class="combo-chart" aria-label="Grafico de evolucion por fecha"></div>
+            </article>
+
+            <article class="report-block category-chart-card">
+              <div class="report-block-head">
+                <div>
+                  <span>Promedio por categoría</span>
+                  <small>Ordenado de mayor a menor promedio</small>
+                </div>
+              </div>
+              <div id="categoryAverageChart" class="bar-chart" aria-label="Grafico de promedio por categoria"></div>
+            </article>
+          </div>
+
+          <div class="stats-source">
+            <article class="report-block stats-card">
+              <div class="report-block-head">
+                <span>Estadística por categoría</span>
+              </div>
+              <div class="stats-table-head"><span>Categoría</span><span>Promedio</span></div>
+              <div id="categoryStatsList" class="stats-list"></div>
+            </article>
+            <article class="report-block stats-card">
+              <div class="report-block-head">
+                <span>Estadística por usuario creador</span>
+              </div>
+              <div class="stats-table-head"><span>Usuario</span><span>Promedio</span></div>
+              <div id="creatorStatsList" class="stats-list"></div>
+            </article>
+            <article class="report-block stats-card wide-stats">
+              <div class="report-block-head">
+                <span>Estadística por mes</span>
+              </div>
+              <div class="stats-table-head"><span>Mes</span><span>Promedio</span></div>
+              <div id="monthStatsList" class="stats-list"></div>
+            </article>
           </div>
 
           <p id="reportsMessage" class="form-message" role="status"></p>
@@ -389,6 +409,6 @@
     <script>
       window.addEventListener("DOMContentLoaded", () => window.lucide?.createIcons());
     </script>
-    <script type="module" src="app.js?v=2.2.1"></script>
+    <script type="module" src="app.js?v=2.2.2"></script>
   </body>
 </html>

@@ -810,7 +810,7 @@ function renderDashboard(record, previous) {
 
   elements.dashboardAverage.textContent = formatPercent(record.promedio);
   elements.dashboardDelta.textContent = previous ? formatDelta(record.promedio - previous.promedio) : "Sin dato";
-  elements.dashboardDate.textContent = `Último registro: ${formatDate(record.fecha)}`;
+  elements.dashboardDate.textContent = formatDate(record.fecha);
   elements.greenCount.textContent = String(counts.green);
   elements.yellowCount.textContent = String(counts.yellow);
   elements.redCount.textContent = String(counts.red);

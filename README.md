@@ -137,6 +137,12 @@ Se agrega menu lateral colapsable. En escritorio el sidebar puede reducirse a so
 
 El estado abierto/cerrado se recuerda con `localStorage` sin modificar autenticacion, roles, Firestore ni las funcionalidades existentes.
 
+## Version 2.2.2
+
+Se reorganiza el dashboard con CSS Grid compacto: cinco KPIs en una fila, ultimo registro y total de registros integrados como tarjetas, graficos inmediatamente debajo en proporcion aproximada 70/30 y tablas visibles en grilla de dos columnas.
+
+El sidebar colapsado mantiene solo iconos con tooltip al pasar el mouse, al estilo Teams, Discord o Power BI, y el contenido principal aprovecha mas ancho disponible.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

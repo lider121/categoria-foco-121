@@ -2685,3 +2685,379 @@ textarea {
     grid-template-columns: none;
   }
 }
+
+/* v2.2.2 compact grid dashboard */
+.app-main {
+  width: 100%;
+  max-width: none;
+  padding: 18px 22px 18px;
+}
+
+.app-view.sidebar-collapsed .app-main {
+  padding-inline: 18px;
+}
+
+.sidebar-toggle {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  font-size: 20px;
+}
+
+.app-header {
+  align-items: center;
+  padding: 0 0 14px;
+}
+
+.app-header h1 {
+  font-size: 28px;
+}
+
+.app-header p {
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.dashboard-panel {
+  margin-bottom: 14px;
+}
+
+.dashboard-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-card {
+  min-height: 132px;
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.dashboard-card span,
+.dashboard-card small,
+.report-card span,
+.reports-panel .report-card span {
+  font-size: 11px;
+}
+
+.hero-metric strong {
+  margin: 12px 0 8px;
+  font-size: clamp(30px, 3.2vw, 44px);
+}
+
+.hero-metric small {
+  min-height: 20px;
+  font-size: 12px;
+}
+
+.hero-metric em,
+.total-dashboard em {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.traffic-dashboard .traffic-grid {
+  height: auto;
+  margin-top: 12px;
+}
+
+.traffic-grid {
+  gap: 8px;
+}
+
+.traffic-item {
+  min-height: 68px;
+  padding: 9px 6px;
+}
+
+.traffic-item strong {
+  font-size: 26px;
+}
+
+.traffic-item small {
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.critical-dashboard ol {
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.critical-dashboard li {
+  font-size: 12px;
+}
+
+.latest-dashboard,
+.total-dashboard {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  text-align: left;
+}
+
+.latest-dashboard .kpi-icon,
+.total-dashboard .kpi-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.latest-dashboard strong,
+.total-dashboard strong {
+  margin: 9px 0 4px;
+  color: var(--ink);
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 900;
+}
+
+.latest-dashboard small,
+.total-dashboard small {
+  color: #52617a;
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.reports-panel {
+  margin-bottom: 14px;
+  padding: 18px;
+  border-radius: 14px;
+}
+
+.reports-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.reports-heading h2 {
+  font-size: 22px;
+}
+
+.reports-heading p:not(.eyebrow) {
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.report-filters,
+.reports-panel .report-filters {
+  grid-template-columns: 152px 152px 118px;
+  gap: 10px;
+}
+
+.report-filters label {
+  gap: 5px;
+}
+
+.report-filters input,
+.report-filters button {
+  min-height: 38px;
+}
+
+.report-metrics,
+.reports-panel .report-metrics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.report-card,
+.reports-panel .report-card {
+  grid-template-columns: 42px minmax(0, 1fr);
+  min-height: 98px;
+  gap: 10px;
+  padding: 13px;
+  border-radius: 12px;
+}
+
+.report-card .kpi-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.kpi-icon svg,
+.kpi-icon i {
+  width: 20px;
+  height: 20px;
+}
+
+.report-card strong,
+.reports-panel .report-card strong {
+  margin-top: 4px;
+  font-size: clamp(20px, 2vw, 28px);
+}
+
+.report-card small,
+.reports-panel .report-card small {
+  font-size: 11px;
+}
+
+.reports-grid,
+.reports-panel .reports-grid {
+  grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.report-block,
+.reports-panel .report-block {
+  min-height: 330px;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.report-block-head {
+  margin-bottom: 10px;
+}
+
+.report-block-head span,
+.reports-panel .report-block-head span {
+  font-size: 15px;
+}
+
+.report-block-head small,
+.reports-panel .report-block-head small {
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.combo-chart svg {
+  min-width: 560px;
+}
+
+.chart-legend {
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.category-chart-card .bar-chart {
+  min-height: 245px;
+  gap: 10px;
+}
+
+.category-chart-card .vertical-track {
+  min-height: 168px;
+}
+
+.category-chart-card .vertical-fill {
+  width: min(34px, 78%);
+}
+
+.category-chart-card .bar-label {
+  min-height: 42px;
+  font-size: 10px;
+}
+
+.stats-source {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stats-source .report-block {
+  min-height: 0;
+}
+
+.stats-table-head {
+  padding: 8px;
+  font-size: 12px;
+}
+
+.stats-list {
+  gap: 4px;
+}
+
+.stats-row {
+  padding: 7px 8px;
+}
+
+.stats-row span,
+.stats-row strong {
+  font-size: 12px;
+}
+
+.stats-row small {
+  font-size: 10px;
+}
+
+.app-shell {
+  gap: 14px;
+  padding-bottom: 18px;
+}
+
+.form-panel,
+.side-panel {
+  padding: 18px;
+}
+
+.app-view.sidebar-collapsed .reports-nav button {
+  position: relative;
+}
+
+.app-view.sidebar-collapsed .reports-nav button::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 30;
+  min-width: max-content;
+  padding: 7px 9px;
+  color: #ffffff;
+  background: #111827;
+  border-radius: 7px;
+  box-shadow: 0 10px 26px rgba(15, 31, 61, 0.18);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.app-view.sidebar-collapsed .reports-nav button:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (max-width: 1380px) {
+  .dashboard-grid,
+  .report-metrics,
+  .reports-panel .report-metrics {
+    grid-template-columns: repeat(5, minmax(140px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .reports-grid,
+  .reports-panel .reports-grid,
+  .stats-source {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (max-width: 980px) {
+  .app-main {
+    padding: 14px;
+  }
+
+  .dashboard-grid,
+  .report-metrics,
+  .reports-panel .report-metrics {
+    grid-template-columns: 1fr;
+    overflow-x: visible;
+  }
+
+  .reports-heading {
+    gap: 10px;
+  }
+
+  .report-filters,
+  .reports-panel .report-filters {
+    grid-template-columns: 1fr;
+  }
+}
