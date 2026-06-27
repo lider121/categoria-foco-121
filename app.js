@@ -39,9 +39,8 @@ const elements = {
   criticalList: document.querySelector("#criticalList"),
   dashboardAverage: document.querySelector("#dashboardAverage"),
   dashboardCriticalList: document.querySelector("#dashboardCriticalList"),
-  dashboardDate: document.querySelector("#dashboardDate"),
   dashboardDelta: document.querySelector("#dashboardDelta"),
-  dashboardTotalRecords: document.querySelector("#dashboardTotalRecords"),
+  dashboardTrendIcon: document.querySelector("#dashboardTrendIcon"),
   greenCount: document.querySelector("#greenCount"),
   customNameInput: document.querySelector("#customNameInput"),
   customNameWrap: document.querySelector("#customNameWrap"),
@@ -73,27 +72,19 @@ const elements = {
   passwordInput: document.querySelector("#passwordInput"),
   categoryAverageChart: document.querySelector("#categoryAverageChart"),
   categoryStatsList: document.querySelector("#categoryStatsList"),
-  creatorStatsList: document.querySelector("#creatorStatsList"),
   dateTrendChart: document.querySelector("#dateTrendChart"),
+  exportReportPdfButton: document.querySelector("#exportReportPdfButton"),
   refreshButton: document.querySelector("#refreshButton"),
   refreshReportsButton: document.querySelector("#refreshReportsButton"),
-  reportBestDetail: document.querySelector("#reportBestDetail"),
-  reportBestPercent: document.querySelector("#reportBestPercent"),
   reportDateFrom: document.querySelector("#reportDateFrom"),
   reportDateTo: document.querySelector("#reportDateTo"),
-  reportLatestDate: document.querySelector("#reportLatestDate"),
-  reportLatestHint: document.querySelector("#reportLatestHint"),
-  reportOverallAverage: document.querySelector("#reportOverallAverage"),
   reportRangeLabel: document.querySelector("#reportRangeLabel"),
   reportsNav: document.querySelector(".reports-nav"),
   reportsMessage: document.querySelector("#reportsMessage"),
   reportsPanel: document.querySelector("#reportsPanel"),
-  reportTotalRecords: document.querySelector("#reportTotalRecords"),
   reportUserInitials: document.querySelector("#reportUserInitials"),
   reportUserName: document.querySelector("#reportUserName"),
   reportUserRole: document.querySelector("#reportUserRole"),
-  reportWorstDetail: document.querySelector("#reportWorstDetail"),
-  reportWorstPercent: document.querySelector("#reportWorstPercent"),
   roleNotice: document.querySelector("#roleNotice"),
   clearFiltersButton: document.querySelector("#clearFiltersButton"),
   resultsCount: document.querySelector("#resultsCount"),
@@ -155,6 +146,7 @@ function bindEvents() {
   elements.clearFiltersButton.addEventListener("click", clearHistoryFilters);
   elements.refreshButton.addEventListener("click", refreshSummary);
   elements.refreshReportsButton.addEventListener("click", loadReports);
+  elements.exportReportPdfButton?.addEventListener("click", exportReportPdf);
   elements.reportDateFrom.addEventListener("change", loadReports);
   elements.reportDateTo.addEventListener("change", loadReports);
   elements.reportsNav.addEventListener("click", handleReportNavAction);
@@ -596,7 +588,6 @@ async function loadHistory() {
     const historyQuery = buildHistoryQuery();
     const snapshot = await firestoreApi.getDocs(historyQuery);
     historyRecords = snapshot.docs.map((item) => normalizeRecord(item.data()));
-    if (elements.dashboardTotalRecords) elements.dashboardTotalRecords.textContent = String(historyRecords.length);
     updateCreatorFilterOptions(historyRecords);
     applyHistoryFilters();
   } catch (error) {
@@ -796,11 +787,10 @@ function renderDashboard(record, previous) {
   if (!record) {
     elements.dashboardAverage.textContent = "0%";
     elements.dashboardDelta.textContent = "Sin dato";
-    elements.dashboardDate.textContent = "Sin registros";
+    updateDashboardTrend(null);
     elements.greenCount.textContent = "0";
     elements.yellowCount.textContent = "0";
     elements.redCount.textContent = "0";
-    if (elements.dashboardTotalRecords) elements.dashboardTotalRecords.textContent = "0";
     elements.dashboardCriticalList.innerHTML = "<li>Sin datos</li>";
     return;
   }
@@ -809,14 +799,42 @@ function renderDashboard(record, previous) {
   const critical = getCriticalCategories(record.categorias);
 
   elements.dashboardAverage.textContent = formatPercent(record.promedio);
-  elements.dashboardDelta.textContent = previous ? formatDelta(record.promedio - previous.promedio) : "Sin dato";
-  elements.dashboardDate.textContent = formatDate(record.fecha);
+  const delta = previous ? record.promedio - previous.promedio : null;
+  elements.dashboardDelta.textContent = previous ? formatDelta(delta) : "Sin dato";
+  updateDashboardTrend(delta);
   elements.greenCount.textContent = String(counts.green);
   elements.yellowCount.textContent = String(counts.yellow);
   elements.redCount.textContent = String(counts.red);
   elements.dashboardCriticalList.innerHTML = critical
     .map((category) => `<li>${escapeHtml(category.nombre)} (${formatPercent(category.valor)})</li>`)
     .join("");
+}
+
+function updateDashboardTrend(delta) {
+  if (!elements.dashboardTrendIcon) return;
+
+  elements.dashboardTrendIcon.classList.remove("up", "down", "neutral");
+
+  if (typeof delta !== "number" || Number.isNaN(delta)) {
+    elements.dashboardTrendIcon.textContent = "➖";
+    elements.dashboardTrendIcon.classList.add("neutral");
+    return;
+  }
+
+  if (delta > 0) {
+    elements.dashboardTrendIcon.textContent = "↑";
+    elements.dashboardTrendIcon.classList.add("up");
+    return;
+  }
+
+  if (delta < 0) {
+    elements.dashboardTrendIcon.textContent = "↓";
+    elements.dashboardTrendIcon.classList.add("down");
+    return;
+  }
+
+  elements.dashboardTrendIcon.textContent = "→";
+  elements.dashboardTrendIcon.classList.add("neutral");
 }
 
 async function loadReports() {
@@ -860,27 +878,16 @@ async function getRecordsForReports() {
 function renderReports(records) {
   const summary = buildReportSummary(records);
 
-  elements.reportTotalRecords.textContent = String(summary.totalRecords);
-  if (elements.dashboardTotalRecords) elements.dashboardTotalRecords.textContent = String(summary.totalRecords);
-  elements.reportOverallAverage.textContent = formatPercent(summary.average);
-  elements.reportBestPercent.textContent = summary.best ? formatPercent(summary.best.valor) : "0%";
-  elements.reportBestDetail.textContent = summary.best ? `${summary.best.nombre} (${formatDate(summary.best.fecha)})` : "Sin datos";
-  elements.reportWorstPercent.textContent = summary.worst ? formatPercent(summary.worst.valor) : "0%";
-  elements.reportWorstDetail.textContent = summary.worst ? `${summary.worst.nombre} (${formatDate(summary.worst.fecha)})` : "Sin datos";
-  elements.reportLatestDate.textContent = summary.latestDate ? formatDate(summary.latestDate) : "Sin datos";
-  elements.reportLatestHint.textContent = summary.latestDate ? getDaysAgoLabel(summary.latestDate) : "Registro mas reciente";
   elements.reportRangeLabel.textContent = getReportRangeLabel();
 
   renderDateTrendChart(summary.byDate);
   renderCategoryAverageChart(summary.byCategory);
   renderStatsList(elements.categoryStatsList, summary.byCategory, renderCategoryStatItem, "Sin categorias");
-  renderStatsList(elements.creatorStatsList, summary.byCreator, renderGroupedStatItem, "Sin usuarios");
   renderStatsList(elements.monthStatsList, summary.byMonth, renderGroupedStatItem, "Sin meses");
 }
 
 function buildReportSummary(records) {
   const categoryBuckets = new Map(categories.map((category) => [category.code, createReportBucket(`${category.code} - ${category.name}`)]));
-  const creatorBuckets = new Map();
   const monthBuckets = new Map();
   const dateBuckets = new Map();
   const values = [];
@@ -888,7 +895,6 @@ function buildReportSummary(records) {
 
   records.forEach((record) => {
     latestDate = latestDate && latestDate > record.fecha ? latestDate : record.fecha;
-    addBucketValue(getOrCreateBucket(creatorBuckets, getRecordCreator(record)), record.promedio);
     addBucketValue(getOrCreateBucket(monthBuckets, record.fecha.slice(0, 7)), record.promedio);
     addBucketValue(getOrCreateBucket(dateBuckets, record.fecha), record.promedio);
 
@@ -905,7 +911,6 @@ function buildReportSummary(records) {
   });
 
   const categoryStats = Array.from(categoryBuckets.values()).map(finalizeReportBucket);
-  const creatorStats = Array.from(creatorBuckets.values()).map(finalizeReportBucket).sort((a, b) => b.average - a.average);
   const monthStats = Array.from(monthBuckets.values()).map(finalizeReportBucket).sort((a, b) => b.label.localeCompare(a.label));
   const dateStats = Array.from(dateBuckets.values()).map(finalizeReportBucket).sort((a, b) => a.label.localeCompare(b.label));
 
@@ -913,7 +918,6 @@ function buildReportSummary(records) {
     average: records.length ? roundOne(records.reduce((sum, record) => sum + record.promedio, 0) / records.length) : 0,
     best: values.length ? values.slice().sort((a, b) => b.valor - a.valor)[0] : null,
     byCategory: categoryStats,
-    byCreator: creatorStats,
     byDate: dateStats,
     byMonth: monthStats,
     latestDate,
@@ -964,24 +968,21 @@ function renderDateTrendChart(points) {
   const width = 760;
   const height = 300;
   const left = 46;
-  const right = 48;
-  const top = 28;
+  const right = 22;
+  const top = 34;
   const bottom = 48;
   const chartWidth = width - left - right;
   const chartHeight = height - top - bottom;
-  const maxCount = Math.max(...points.map((point) => point.count), 1);
   const slot = chartWidth / points.length;
-  const barWidth = Math.min(34, slot * 0.52);
-  const pointPositions = points.map((point, index) => {
+  const barWidth = Math.min(36, slot * 0.52);
+  const barPositions = points.map((point, index) => {
     const x = left + slot * index + slot / 2;
-    const percentY = top + chartHeight - (point.average / 100) * chartHeight;
-    const countHeight = (point.count / maxCount) * chartHeight;
+    const barHeight = (Math.max(0, Math.min(100, point.average)) / 100) * chartHeight;
     const barX = x - barWidth / 2;
-    const barY = top + chartHeight - countHeight;
+    const barY = top + chartHeight - barHeight;
 
-    return { ...point, barX, barY, barWidth, countHeight, percentY, x };
+    return { ...point, barHeight, barX, barY, barWidth, x };
   });
-  const linePath = buildSmoothPath(pointPositions);
   const leftTicks = [100, 75, 50, 25, 0]
     .map((tick) => {
       const y = top + chartHeight - (tick / 100) * chartHeight;
@@ -991,70 +992,35 @@ function renderDateTrendChart(points) {
       `;
     })
     .join("");
-  const countTicks = [maxCount, Math.ceil(maxCount / 2), 0]
-    .filter((tick, index, array) => array.indexOf(tick) === index)
-    .map((tick) => {
-      const y = top + chartHeight - (tick / maxCount) * chartHeight;
-      return `<text class="axis-label right-axis" x="${width - right + 10}" y="${roundOne(y + 4)}">${tick}</text>`;
-    })
-    .join("");
-  const labels = pointPositions
-    .filter((_, index) => index === 0 || index === pointPositions.length - 1)
-    .map((point, index) => `<text class="axis-label date-axis" x="${roundOne(point.x)}" y="${height - 14}" text-anchor="${index === 0 ? "start" : "end"}">${escapeHtml(formatDate(point.label))}</text>`)
+  const labels = barPositions
+    .map((point) => `<text class="axis-label date-axis" x="${roundOne(point.x)}" y="${height - 14}" text-anchor="middle">${escapeHtml(formatShortDate(point.label))}</text>`)
     .join("");
 
   elements.dateTrendChart.innerHTML = `
-    <div class="chart-legend" aria-hidden="true">
-      <span><i class="legend-line"></i>Promedio diario (%)</span>
-      <span><i class="legend-bar"></i>Cantidad de registros</span>
-    </div>
-    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolucion de promedio diario y cantidad de registros por fecha">
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolucion de promedio diario por fecha">
       <defs>
         <linearGradient id="reportBarGradient" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#a9d2ff" />
-          <stop offset="100%" stop-color="#3f8df5" />
+          <stop offset="0%" stop-color="#2f7cff" />
+          <stop offset="100%" stop-color="#0958d9" />
         </linearGradient>
       </defs>
+      <text class="axis-label left-axis" x="${left}" y="${top - 14}" text-anchor="start">Promedio (%)</text>
       ${leftTicks}
       <line class="axis-line" x1="${left}" y1="${top}" x2="${left}" y2="${top + chartHeight}" />
-      <line class="axis-line" x1="${width - right}" y1="${top}" x2="${width - right}" y2="${top + chartHeight}" />
       <line class="axis-line" x1="${left}" y1="${top + chartHeight}" x2="${width - right}" y2="${top + chartHeight}" />
-      ${countTicks}
-      ${pointPositions.map(renderTrendBar).join("")}
-      <path class="trend-line" d="${linePath}" />
-      ${pointPositions.map(renderTrendPoint).join("")}
+      ${barPositions.map(renderTrendBar).join("")}
       ${labels}
     </svg>
+    <p class="chart-note">Promedio diario calculado sobre el total de registros del dia.</p>
   `;
-}
-
-function buildSmoothPath(points) {
-  if (points.length === 1) return `M ${roundOne(points[0].x)} ${roundOne(points[0].percentY)}`;
-
-  return points.reduce((path, point, index) => {
-    if (index === 0) return `M ${roundOne(point.x)} ${roundOne(point.percentY)}`;
-
-    const previous = points[index - 1];
-    const controlDistance = (point.x - previous.x) * 0.45;
-    const c1x = previous.x + controlDistance;
-    const c2x = point.x - controlDistance;
-    return `${path} C ${roundOne(c1x)} ${roundOne(previous.percentY)}, ${roundOne(c2x)} ${roundOne(point.percentY)}, ${roundOne(point.x)} ${roundOne(point.percentY)}`;
-  }, "");
 }
 
 function renderTrendBar(point) {
   return `
-    <rect class="count-bar" x="${roundOne(point.barX)}" y="${roundOne(point.barY)}" width="${roundOne(point.barWidth)}" height="${roundOne(point.countHeight)}" rx="4">
-      <title>${escapeHtml(formatDate(point.label))} | Promedio: ${formatPercent(point.average)} | Registros: ${point.count}</title>
+    <text class="bar-top-label" x="${roundOne(point.x)}" y="${roundOne(point.barY - 8)}" text-anchor="middle">${formatPercent(point.average)}</text>
+    <rect class="daily-average-bar" x="${roundOne(point.barX)}" y="${roundOne(point.barY)}" width="${roundOne(point.barWidth)}" height="${roundOne(point.barHeight)}" rx="5">
+      <title>${escapeHtml(formatDate(point.label))} | Promedio diario: ${formatPercent(point.average)}</title>
     </rect>
-  `;
-}
-
-function renderTrendPoint(point) {
-  return `
-    <circle class="trend-point" cx="${roundOne(point.x)}" cy="${roundOne(point.percentY)}" r="5">
-      <title>${escapeHtml(formatDate(point.label))} | Promedio: ${formatPercent(point.average)} | Registros: ${point.count}</title>
-    </circle>
   `;
 }
 
@@ -1069,14 +1035,14 @@ function renderCategoryAverageChart(stats) {
 }
 
 function renderCategoryBar(item) {
-  const height = Math.max(4, Math.min(100, item.average));
+  const width = Math.max(4, Math.min(100, item.average));
   const status = getPerformanceStatus(item.average);
 
   return `
-    <div class="bar-column" title="${escapeHtml(item.label)} | Promedio: ${formatPercent(item.average)} | Registros: ${item.count}">
-      <strong class="bar-value stat-value performance-${status}">${formatPercent(item.average)}</strong>
-      <div class="vertical-track"><div class="vertical-fill performance-${status}" style="height: ${height}%"></div></div>
-      <span class="bar-label">${escapeHtml(item.label)}</span>
+    <div class="bar-row" title="${escapeHtml(item.label)} | Promedio: ${formatPercent(item.average)} | Registros: ${item.count}">
+      <span>${escapeHtml(item.label)}</span>
+      <div class="bar-track"><div class="bar-fill performance-${status}" style="width: ${width}%"></div></div>
+      <strong class="stat-value performance-${status}">${formatPercent(item.average)}</strong>
     </div>
   `;
 }
@@ -1184,6 +1150,16 @@ async function exportJsonRecords() {
     console.error(error);
     setMessage(`No se pudo exportar JSON: ${getFirestoreErrorMessage(error)}`, "error");
   }
+}
+
+function exportReportPdf() {
+  if (!canViewReports()) {
+    setReportsMessage("Solo supervisor o administrador puede exportar reportes.", "warning");
+    return;
+  }
+
+  setReportsMessage("Abriendo dialogo de impresion para guardar el reporte en PDF.", "success");
+  window.print();
 }
 
 async function getRecordsForExport(range) {
@@ -1794,6 +1770,11 @@ function addDays(fecha, days) {
 function formatDate(date) {
   const [year, month, day] = date.split("-");
   return `${day}-${month}-${year}`;
+}
+
+function formatShortDate(date) {
+  const [, month, day] = date.split("-");
+  return `${day}/${month}`;
 }
 
 function formatPercent(value) {

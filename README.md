@@ -143,6 +143,18 @@ Se reorganiza el dashboard con CSS Grid compacto: cinco KPIs en una fila, ultimo
 
 El sidebar colapsado mantiene solo iconos con tooltip al pasar el mouse, al estilo Teams, Discord o Power BI, y el contenido principal aprovecha mas ancho disponible.
 
+## Version 2.2.3
+
+Se simplifica el dashboard principal para mostrar solo indicadores utiles para la toma de decisiones: promedio mas reciente, semaforo de categorias, top 3 criticas y tendencia contra el registro anterior.
+
+Se eliminan las tarjetas redundantes de ultimo registro y total de registros. Las cuatro tarjetas superiores quedan reorganizadas en una grilla uniforme que ocupa todo el ancho disponible.
+
+## Version 2.2.4
+
+Ajuste visual final del dashboard y reportes: se mantiene el tema claro, menu lateral compacto y cuatro tarjetas principales en el dashboard.
+
+Reportes queda enfocado en graficos: se eliminan KPIs repetidos y la estadistica por usuario creador, la evolucion por fecha queda como barras de promedio diario y el promedio por categoria queda como barras horizontales por desempeno. Se agrega boton para exportar el reporte a PDF mediante impresion del navegador.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

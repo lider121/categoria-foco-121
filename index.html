@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.2.2" />
+    <link rel="stylesheet" href="styles.css?v=2.2.4" />
   </head>
   <body class="auth-loading">
     <section id="loginView" class="auth-panel" aria-labelledby="loginTitle">
@@ -61,7 +61,7 @@
 
           <div class="reports-sidebar-foot">
             <strong>FOCO 121</strong>
-            <small>v2.2</small>
+            <small>v2.2.4</small>
           </div>
       </aside>
 
@@ -79,8 +79,7 @@
             <article class="dashboard-card hero-metric">
               <span>Promedio más reciente</span>
               <strong id="dashboardAverage">0%</strong>
-              <small id="dashboardDelta">Sin dato</small>
-              <em>vs periodo anterior</em>
+              <small>Cumplimiento último registro</small>
             </article>
 
             <article class="dashboard-card traffic-dashboard">
@@ -106,17 +105,13 @@
               <ol id="dashboardCriticalList"></ol>
             </article>
 
-            <article class="dashboard-card latest-dashboard">
-              <span class="kpi-icon"><i data-lucide="calendar-days"></i></span>
-              <small>Último registro</small>
-              <strong id="dashboardDate">Sin registros</strong>
-            </article>
-
-            <article class="dashboard-card total-dashboard">
-              <span class="kpi-icon"><i data-lucide="clipboard-list"></i></span>
-              <strong id="dashboardTotalRecords">0</strong>
-              <small>Total de registros</small>
-              <em>En el periodo seleccionado</em>
+            <article class="dashboard-card trend-dashboard">
+              <span>Tendencia</span>
+              <div class="trend-summary">
+                <span id="dashboardTrendIcon" class="trend-icon neutral">➖</span>
+                <strong id="dashboardDelta">Sin dato</strong>
+              </div>
+              <small>Vs registro anterior</small>
             </article>
           </div>
         </section>
@@ -137,50 +132,8 @@
                 <input id="reportDateTo" type="date" />
               </label>
               <button id="refreshReportsButton" class="secondary-button" type="button">Actualizar</button>
+              <button id="exportReportPdfButton" class="secondary-button report-pdf-button" type="button"><i data-lucide="file-down"></i>Exportar PDF</button>
             </div>
-          </div>
-
-          <div class="report-metrics">
-            <article class="report-card kpi-blue">
-              <span class="kpi-icon"><i data-lucide="clipboard-list"></i></span>
-              <div>
-                <span>Total de registros</span>
-                <strong id="reportTotalRecords">0</strong>
-                <small>En el periodo</small>
-              </div>
-            </article>
-            <article class="report-card kpi-purple">
-              <span class="kpi-icon"><i data-lucide="chart-line"></i></span>
-              <div>
-                <span>Promedio general</span>
-                <strong id="reportOverallAverage">0%</strong>
-                <small>Cumplimiento</small>
-              </div>
-            </article>
-            <article class="report-card kpi-green">
-              <span class="kpi-icon"><i data-lucide="trending-up"></i></span>
-              <div>
-                <span>Mejor porcentaje</span>
-                <strong id="reportBestPercent">0%</strong>
-                <small id="reportBestDetail">Sin datos</small>
-              </div>
-            </article>
-            <article class="report-card kpi-red">
-              <span class="kpi-icon"><i data-lucide="trending-down"></i></span>
-              <div>
-                <span>Peor porcentaje</span>
-                <strong id="reportWorstPercent">0%</strong>
-                <small id="reportWorstDetail">Sin datos</small>
-              </div>
-            </article>
-            <article class="report-card kpi-yellow">
-              <span class="kpi-icon"><i data-lucide="calendar-days"></i></span>
-              <div>
-                <span>Última fecha registrada</span>
-                <strong id="reportLatestDate">Sin datos</strong>
-                <small id="reportLatestHint">Registro mas reciente</small>
-              </div>
-            </article>
           </div>
 
           <div class="reports-grid">
@@ -188,7 +141,7 @@
               <div class="report-block-head">
                 <div>
                   <span>Evolución por fecha</span>
-                  <small>Cantidad de registros y promedio diario</small>
+                  <small>Promedio diario (%)</small>
                 </div>
                 <small id="reportRangeLabel">Todos los registros</small>
               </div>
@@ -213,13 +166,6 @@
               </div>
               <div class="stats-table-head"><span>Categoría</span><span>Promedio</span></div>
               <div id="categoryStatsList" class="stats-list"></div>
-            </article>
-            <article class="report-block stats-card">
-              <div class="report-block-head">
-                <span>Estadística por usuario creador</span>
-              </div>
-              <div class="stats-table-head"><span>Usuario</span><span>Promedio</span></div>
-              <div id="creatorStatsList" class="stats-list"></div>
             </article>
             <article class="report-block stats-card wide-stats">
               <div class="report-block-head">
@@ -409,6 +355,6 @@
     <script>
       window.addEventListener("DOMContentLoaded", () => window.lucide?.createIcons());
     </script>
-    <script type="module" src="app.js?v=2.2.2"></script>
+    <script type="module" src="app.js?v=2.2.4"></script>
   </body>
 </html>
