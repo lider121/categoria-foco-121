@@ -131,6 +131,12 @@ El pulido visual final usa layout de dos columnas con sidebar fijo, tipografia I
 
 No se modifica la logica de Firebase Authentication, roles, dashboard, historial, filtros, edicion, eliminacion con respaldo, exportacion CSV/JSON ni WhatsApp.
 
+## Version 2.2.1
+
+Se agrega menu lateral colapsable. En escritorio el sidebar puede reducirse a solo iconos para que el contenido principal use mas espacio. En movil se abre como panel lateral sobre el contenido, con fondo oscuro transparente y cierre al tocar fuera del menu.
+
+El estado abierto/cerrado se recuerda con `localStorage` sin modificar autenticacion, roles, Firestore ni las funcionalidades existentes.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

@@ -13,6 +13,7 @@ const DELETED_LOGS_COLLECTION = "deletedLogs";
 const ROLES_COLLECTION = "roles";
 const HISTORY_LIMIT = 200;
 const DEFAULT_ROLE = "user";
+const SIDEBAR_STORAGE_KEY = "categoriaFocoSidebarCollapsed";
 
 const categories = [
   { code: "82", name: "Check-Out" },
@@ -100,6 +101,8 @@ const elements = {
   sessionRole: document.querySelector("#sessionRole"),
   sessionUser: document.querySelector("#sessionUser"),
   shiftSelect: document.querySelector("#shiftSelect"),
+  sidebarOverlay: document.querySelector("#sidebarOverlay"),
+  sidebarToggle: document.querySelector("#sidebarToggle"),
   monthStatsList: document.querySelector("#monthStatsList"),
   whatsappButton: document.querySelector("#whatsappButton"),
   whatsappDialog: document.querySelector("#whatsappDialog"),
@@ -128,6 +131,7 @@ function init() {
   renderCategoryFilterOptions();
   elements.dateInput.value = getToday();
   bindEvents();
+  initSidebarState();
   setAuthUi(false);
   connectFirebase();
   updateComputedState();
@@ -154,8 +158,33 @@ function bindEvents() {
   elements.reportDateFrom.addEventListener("change", loadReports);
   elements.reportDateTo.addEventListener("change", loadReports);
   elements.reportsNav.addEventListener("click", handleReportNavAction);
+  elements.sidebarOverlay.addEventListener("click", closeSidebar);
+  elements.sidebarToggle.addEventListener("click", toggleSidebar);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
+}
+
+function initSidebarState() {
+  const storedState = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+  const isCollapsed = storedState === null
+    ? window.matchMedia("(max-width: 980px)").matches
+    : storedState === "true";
+  setSidebarCollapsed(isCollapsed);
+}
+
+function toggleSidebar() {
+  setSidebarCollapsed(!elements.appView.classList.contains("sidebar-collapsed"));
+}
+
+function closeSidebar() {
+  setSidebarCollapsed(true);
+}
+
+function setSidebarCollapsed(isCollapsed) {
+  elements.appView.classList.toggle("sidebar-collapsed", isCollapsed);
+  elements.appView.classList.toggle("sidebar-open", !isCollapsed);
+  elements.sidebarToggle.setAttribute("aria-expanded", String(!isCollapsed));
+  localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
 }
 
 function handleReportNavAction(event) {
@@ -183,6 +212,10 @@ function handleReportNavAction(event) {
     signOut();
   } else {
     setReportsMessage("Funcion preparada para una version futura.", "info");
+  }
+
+  if (window.matchMedia("(max-width: 980px)").matches) {
+    closeSidebar();
   }
 }
 

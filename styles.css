@@ -1742,6 +1742,38 @@ body {
   display: grid;
   grid-template-columns: 252px minmax(0, 1fr);
   min-height: 100vh;
+  transition: grid-template-columns 0.22s ease;
+}
+
+.app-view.sidebar-collapsed {
+  grid-template-columns: 84px minmax(0, 1fr);
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+.sidebar-toggle {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  margin-bottom: 22px;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(15, 31, 61, 0.045);
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.sidebar-toggle:hover {
+  color: var(--blue);
+  background: #eaf2ff;
 }
 
 .reports-sidebar {
@@ -1756,6 +1788,12 @@ body {
   background: #ffffff;
   border-right: 1px solid var(--line);
   box-shadow: 8px 0 28px rgba(15, 31, 61, 0.035);
+  transition: width 0.22s ease, padding 0.22s ease, transform 0.22s ease;
+}
+
+.app-view.sidebar-collapsed .reports-sidebar {
+  width: 84px;
+  padding-inline: 12px;
 }
 
 .reports-brand {
@@ -1764,6 +1802,17 @@ body {
   color: var(--blue);
   font-size: 22px;
   letter-spacing: 0;
+}
+
+.app-view.sidebar-collapsed .reports-brand {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.app-view.sidebar-collapsed .reports-brand strong,
+.app-view.sidebar-collapsed .reports-user-card div,
+.app-view.sidebar-collapsed .reports-sidebar-foot {
+  display: none;
 }
 
 .brand-mark {
@@ -1784,6 +1833,18 @@ body {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   border-radius: 0;
+}
+
+.app-view.sidebar-collapsed .reports-user-card {
+  justify-content: center;
+  grid-template-columns: 1fr;
+  margin-inline: 0;
+  padding: 14px 0;
+  border: 0;
+}
+
+.app-view.sidebar-collapsed .reports-avatar {
+  margin: 0 auto;
 }
 
 .reports-avatar {
@@ -1819,6 +1880,20 @@ body {
   font-size: 15px;
   font-weight: 700;
   transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.app-view.sidebar-collapsed .reports-nav button {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding-inline: 0;
+  color: transparent;
+  font-size: 0;
+}
+
+.app-view.sidebar-collapsed .reports-nav button svg,
+.app-view.sidebar-collapsed .reports-nav button i {
+  width: 20px;
+  height: 20px;
 }
 
 .reports-nav button span {
@@ -2459,10 +2534,88 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .app-view.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .reports-sidebar {
-    position: static;
-    width: 100%;
-    min-height: auto;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: min(304px, calc(100vw - 56px));
+    min-height: 100vh;
+    transform: translateX(-105%);
+    box-shadow: 18px 0 46px rgba(15, 31, 61, 0.18);
+  }
+
+  .app-view.sidebar-open .reports-sidebar {
+    transform: translateX(0);
+  }
+
+  .app-view.sidebar-collapsed .reports-sidebar {
+    width: min(304px, calc(100vw - 56px));
+    padding: 28px 14px 22px;
+  }
+
+  .app-view.sidebar-collapsed .reports-brand {
+    justify-content: flex-start;
+    padding: 0 14px 26px;
+  }
+
+  .app-view.sidebar-collapsed .reports-brand strong,
+  .app-view.sidebar-collapsed .reports-user-card div,
+  .app-view.sidebar-collapsed .reports-sidebar-foot {
+    display: block;
+  }
+
+  .app-view.sidebar-collapsed .reports-user-card {
+    justify-content: start;
+    grid-template-columns: auto minmax(0, 1fr);
+    margin: 0 -14px 28px;
+    padding: 20px 28px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .app-view.sidebar-collapsed .reports-avatar {
+    margin: 0;
+  }
+
+  .app-view.sidebar-collapsed .reports-nav button {
+    grid-template-columns: 26px minmax(0, 1fr);
+    justify-items: stretch;
+    padding-inline: 14px;
+    color: #243858;
+    font-size: 15px;
+  }
+
+  .app-view.sidebar-collapsed .reports-nav button.active,
+  .app-view.sidebar-collapsed .reports-nav button:hover {
+    color: var(--blue);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    display: block;
+    pointer-events: none;
+    background: rgba(15, 31, 61, 0);
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+  }
+
+  .app-view.sidebar-open .sidebar-overlay {
+    pointer-events: auto;
+    background: rgba(15, 31, 61, 0.48);
+    opacity: 1;
+  }
+
+  .sidebar-toggle {
+    position: sticky;
+    top: 14px;
+    z-index: 18;
+    margin-bottom: 18px;
   }
 
   .app-main {
