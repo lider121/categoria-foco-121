@@ -127,6 +127,8 @@ Se reemplaza el estilo oscuro por un rediseño claro, simple y ordenado para tod
 
 La seccion de reportes queda organizada con KPIs superiores en tarjetas iguales, grafico de evolucion con mas ancho, grafico por categoria acomodado segun espacio disponible y tablas al final en una grilla responsive. En movil la interfaz usa una sola columna, botones amplios y evita scroll horizontal de pagina.
 
+El pulido visual final usa layout de dos columnas con sidebar fijo, tipografia Inter, iconos Lucide, fondo `#F5F7FB`, tarjetas de 16px, dashboard superior de cuatro tarjetas, dos graficos principales y KPIs inferiores alineados al estilo de referencia.
+
 No se modifica la logica de Firebase Authentication, roles, dashboard, historial, filtros, edicion, eliminacion con respaldo, exportacion CSV/JSON ni WhatsApp.
 
 ## Configurar Firebase

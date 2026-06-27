@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CATEGORÍA FOCO 121</title>
     <link rel="preconnect" href="https://www.gstatic.com" />
-    <link rel="stylesheet" href="styles.css?v=2.2" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=2.2-ui" />
   </head>
   <body class="auth-loading">
     <section id="loginView" class="auth-panel" aria-labelledby="loginTitle">
@@ -30,61 +33,7 @@
     </section>
 
     <div id="appView" class="app-view hidden">
-    <header class="app-header">
-      <div>
-        <p class="eyebrow">Tienda 121</p>
-        <h1>CATEGORÍA FOCO 121</h1>
-      </div>
-      <div class="score-pill">
-        <span>Promedio</span>
-        <strong id="headerAverage">0%</strong>
-      </div>
-    </header>
-
-    <section class="dashboard-panel" aria-labelledby="dashboardTitle">
-      <div class="section-heading dashboard-heading">
-        <div>
-          <p class="eyebrow">Resumen actual</p>
-          <h2 id="dashboardTitle">Dashboard</h2>
-        </div>
-        <span id="dashboardDate" class="dashboard-date">Sin registros</span>
-      </div>
-
-      <div class="dashboard-grid">
-        <article class="dashboard-card hero-metric">
-          <span>Promedio más reciente</span>
-          <strong id="dashboardAverage">0%</strong>
-          <small id="dashboardDelta">Sin dato</small>
-        </article>
-
-        <article class="dashboard-card">
-          <span>Semáforo categorías</span>
-          <div class="traffic-grid">
-            <div class="traffic-item green">
-              <strong id="greenCount">0</strong>
-              <small>Verdes</small>
-            </div>
-            <div class="traffic-item yellow">
-              <strong id="yellowCount">0</strong>
-              <small>Amarillas</small>
-            </div>
-            <div class="traffic-item red">
-              <strong id="redCount">0</strong>
-              <small>Rojas</small>
-            </div>
-          </div>
-        </article>
-
-        <article class="dashboard-card critical-dashboard">
-          <span>Top 3 críticas</span>
-          <ol id="dashboardCriticalList"></ol>
-        </article>
-      </div>
-    </section>
-
-    <section id="reportsPanel" class="reports-panel hidden" aria-labelledby="reportsTitle">
-      <div class="reports-dashboard">
-        <aside class="reports-sidebar" aria-label="Menu de reportes">
+      <aside class="reports-sidebar" aria-label="Menu principal">
           <div class="reports-brand">
             <span class="brand-mark">F</span>
             <strong>FOCO 121</strong>
@@ -99,30 +48,80 @@
           </div>
 
           <nav class="reports-nav">
-            <button type="button" data-report-action="dashboard"><span>▣</span>Dashboard</button>
-            <button type="button" data-report-action="new"><span>＋</span>Nuevo registro</button>
-            <button type="button" data-report-action="history"><span>☷</span>Historial</button>
-            <button class="active" type="button" data-report-action="reports"><span>▥</span>Reportes</button>
-            <button type="button" data-report-action="whatsapp"><span>◌</span>WhatsApp</button>
-            <button type="button" data-report-action="csv"><span>⇩</span>Exportar CSV</button>
-            <button type="button" data-report-action="json"><span>◇</span>Exportar JSON</button>
-            <button type="button" data-report-action="backups"><span>▧</span>Respaldos</button>
-            <button type="button" data-report-action="settings"><span>⚙</span>Configuracion</button>
-            <button class="danger" type="button" data-report-action="logout"><span>↪</span>Cerrar sesion</button>
+            <button class="active" type="button" data-report-action="dashboard"><i data-lucide="layout-dashboard"></i>Dashboard</button>
+            <button type="button" data-report-action="new"><i data-lucide="plus-square"></i>Nuevo registro</button>
+            <button type="button" data-report-action="history"><i data-lucide="list"></i>Historial</button>
+            <button type="button" data-report-action="reports"><i data-lucide="tag"></i>Reportes</button>
+            <button type="button" data-report-action="csv"><i data-lucide="download"></i>Exportar</button>
+            <button type="button" data-report-action="whatsapp"><i data-lucide="message-circle"></i>WhatsApp</button>
+            <button type="button" data-report-action="settings"><i data-lucide="settings"></i>Configuracion</button>
+            <button class="danger" type="button" data-report-action="logout"><i data-lucide="log-out"></i>Cerrar sesion</button>
           </nav>
 
           <div class="reports-sidebar-foot">
             <strong>FOCO 121</strong>
             <small>v2.2</small>
           </div>
-        </aside>
+      </aside>
 
-        <div class="reports-main">
+      <main class="app-main">
+        <header class="app-header">
+          <div>
+            <h1 id="dashboardTitle">Dashboard</h1>
+            <p>Resumen general y análisis del rendimiento</p>
+          </div>
+          <div class="score-pill">
+            <span>Último registro</span>
+            <strong id="dashboardDate">Sin registros</strong>
+          </div>
+        </header>
+
+        <section class="dashboard-panel" aria-labelledby="dashboardTitle">
+          <div class="dashboard-grid">
+            <article class="dashboard-card hero-metric">
+              <span>Promedio más reciente</span>
+              <strong id="dashboardAverage">0%</strong>
+              <small id="dashboardDelta">Sin dato</small>
+              <em>vs periodo anterior</em>
+            </article>
+
+            <article class="dashboard-card traffic-dashboard">
+              <span>Semáforo categorías</span>
+              <div class="traffic-grid">
+                <div class="traffic-item green">
+                  <strong id="greenCount">0</strong>
+                  <small>Verdes</small>
+                </div>
+                <div class="traffic-item yellow">
+                  <strong id="yellowCount">0</strong>
+                  <small>Amarillas</small>
+                </div>
+                <div class="traffic-item red">
+                  <strong id="redCount">0</strong>
+                  <small>Rojas</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="dashboard-card critical-dashboard">
+              <span>Top 3 críticas</span>
+              <ol id="dashboardCriticalList"></ol>
+            </article>
+
+            <article class="dashboard-card total-dashboard">
+              <span class="kpi-icon"><i data-lucide="clipboard-list"></i></span>
+              <strong id="dashboardTotalRecords">0</strong>
+              <small>Total de registros</small>
+              <em>En el periodo seleccionado</em>
+            </article>
+          </div>
+        </section>
+
+        <section id="reportsPanel" class="reports-panel hidden" aria-labelledby="reportsTitle">
           <div class="reports-heading">
             <div>
-              <p class="eyebrow">Analisis</p>
-              <h2 id="reportsTitle">Reportes y estadisticas</h2>
-              <p>Visualiza el rendimiento general y analiza los datos registrados</p>
+              <h2 id="reportsTitle">Reportes y estadísticas</h2>
+              <p>Visualiza el rendimiento general y analiza los datos registrados.</p>
             </div>
             <div class="report-filters">
               <label>
@@ -137,55 +136,12 @@
             </div>
           </div>
 
-          <div class="report-metrics">
-            <article class="report-card kpi-blue">
-              <span class="kpi-icon">▤</span>
-              <div>
-                <span>Total de registros</span>
-                <strong id="reportTotalRecords">0</strong>
-                <small>En el periodo seleccionado</small>
-              </div>
-            </article>
-            <article class="report-card kpi-green">
-              <span class="kpi-icon">▥</span>
-              <div>
-                <span>Promedio general</span>
-                <strong id="reportOverallAverage">0%</strong>
-                <small>Cumplimiento promedio</small>
-              </div>
-            </article>
-            <article class="report-card kpi-green">
-              <span class="kpi-icon">↗</span>
-              <div>
-                <span>Mejor porcentaje</span>
-                <strong id="reportBestPercent">0%</strong>
-                <small id="reportBestDetail">Sin datos</small>
-              </div>
-            </article>
-            <article class="report-card kpi-red">
-              <span class="kpi-icon">↘</span>
-              <div>
-                <span>Peor porcentaje</span>
-                <strong id="reportWorstPercent">0%</strong>
-                <small id="reportWorstDetail">Sin datos</small>
-              </div>
-            </article>
-            <article class="report-card kpi-purple">
-              <span class="kpi-icon">▦</span>
-              <div>
-                <span>Ultima fecha registrada</span>
-                <strong id="reportLatestDate">Sin datos</strong>
-                <small id="reportLatestHint">Registro mas reciente</small>
-              </div>
-            </article>
-          </div>
-
           <div class="reports-grid">
             <article class="report-block wide">
               <div class="report-block-head">
                 <div>
-                  <span>Evolucion de resultados por fecha</span>
-                  <small>Promedio de cumplimiento diario</small>
+                  <span>Evolución por fecha</span>
+                  <small>Cantidad de registros y promedio diario</small>
                 </div>
                 <small id="reportRangeLabel">Todos los registros</small>
               </div>
@@ -195,44 +151,67 @@
             <article class="report-block category-chart-card">
               <div class="report-block-head">
                 <div>
-                  <span>Promedio por categoria</span>
-                  <small>Comparativa de cumplimiento promedio</small>
+                  <span>Promedio por categoría</span>
+                  <small>Ordenado de mayor a menor promedio</small>
                 </div>
               </div>
               <div id="categoryAverageChart" class="bar-chart" aria-label="Grafico de promedio por categoria"></div>
             </article>
+          </div>
 
-            <article class="report-block">
-              <div class="report-block-head">
-                <span>Estadistica por categoria</span>
+          <div class="report-metrics">
+            <article class="report-card kpi-blue">
+              <span class="kpi-icon"><i data-lucide="clipboard-list"></i></span>
+              <div>
+                <span>Total de registros</span>
+                <strong id="reportTotalRecords">0</strong>
+                <small>En el periodo</small>
               </div>
-              <div class="stats-table-head"><span>Categoria</span><span>Promedio</span></div>
-              <div id="categoryStatsList" class="stats-list"></div>
             </article>
-
-            <article class="report-block">
-              <div class="report-block-head">
-                <span>Estadistica por usuario creador</span>
+            <article class="report-card kpi-purple">
+              <span class="kpi-icon"><i data-lucide="chart-line"></i></span>
+              <div>
+                <span>Promedio general</span>
+                <strong id="reportOverallAverage">0%</strong>
+                <small>Cumplimiento</small>
               </div>
-              <div class="stats-table-head"><span>Usuario</span><span>Promedio</span></div>
-              <div id="creatorStatsList" class="stats-list"></div>
             </article>
-
-            <article class="report-block">
-              <div class="report-block-head">
-                <span>Estadistica por mes</span>
+            <article class="report-card kpi-green">
+              <span class="kpi-icon"><i data-lucide="trending-up"></i></span>
+              <div>
+                <span>Mejor porcentaje</span>
+                <strong id="reportBestPercent">0%</strong>
+                <small id="reportBestDetail">Sin datos</small>
               </div>
-              <div class="stats-table-head"><span>Mes</span><span>Promedio</span></div>
-              <div id="monthStatsList" class="stats-list"></div>
+            </article>
+            <article class="report-card kpi-red">
+              <span class="kpi-icon"><i data-lucide="trending-down"></i></span>
+              <div>
+                <span>Peor porcentaje</span>
+                <strong id="reportWorstPercent">0%</strong>
+                <small id="reportWorstDetail">Sin datos</small>
+              </div>
+            </article>
+            <article class="report-card kpi-yellow">
+              <span class="kpi-icon"><i data-lucide="calendar-days"></i></span>
+              <div>
+                <span>Última fecha registrada</span>
+                <strong id="reportLatestDate">Sin datos</strong>
+                <small id="reportLatestHint">Registro mas reciente</small>
+              </div>
             </article>
           </div>
 
-          <p id="reportsMessage" class="form-message" role="status"></p>
-        </div>
-      </div>
-    </section>
+          <div class="stats-source" aria-hidden="true">
+            <div id="categoryStatsList" class="stats-list"></div>
+            <div id="creatorStatsList" class="stats-list"></div>
+            <div id="monthStatsList" class="stats-list"></div>
+          </div>
 
-    <main class="app-shell">
+          <p id="reportsMessage" class="form-message" role="status"></p>
+        </section>
+
+    <div class="app-shell">
       <section class="panel form-panel" aria-labelledby="dailyTitle">
         <div class="section-heading">
           <div>
@@ -386,7 +365,7 @@
 
         <div id="historyList" class="history-list"></div>
       </aside>
-    </main>
+    </div>
 
     <dialog id="whatsappDialog">
       <form method="dialog">
@@ -401,8 +380,13 @@
         </div>
       </form>
     </dialog>
+      </main>
     </div>
 
-    <script type="module" src="app.js?v=2.2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => window.lucide?.createIcons());
+    </script>
+    <script type="module" src="app.js?v=2.2-ui"></script>
   </body>
 </html>

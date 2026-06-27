@@ -40,6 +40,7 @@ const elements = {
   dashboardCriticalList: document.querySelector("#dashboardCriticalList"),
   dashboardDate: document.querySelector("#dashboardDate"),
   dashboardDelta: document.querySelector("#dashboardDelta"),
+  dashboardTotalRecords: document.querySelector("#dashboardTotalRecords"),
   greenCount: document.querySelector("#greenCount"),
   customNameInput: document.querySelector("#customNameInput"),
   customNameWrap: document.querySelector("#customNameWrap"),
@@ -562,6 +563,7 @@ async function loadHistory() {
     const historyQuery = buildHistoryQuery();
     const snapshot = await firestoreApi.getDocs(historyQuery);
     historyRecords = snapshot.docs.map((item) => normalizeRecord(item.data()));
+    if (elements.dashboardTotalRecords) elements.dashboardTotalRecords.textContent = String(historyRecords.length);
     updateCreatorFilterOptions(historyRecords);
     applyHistoryFilters();
   } catch (error) {
@@ -765,6 +767,7 @@ function renderDashboard(record, previous) {
     elements.greenCount.textContent = "0";
     elements.yellowCount.textContent = "0";
     elements.redCount.textContent = "0";
+    if (elements.dashboardTotalRecords) elements.dashboardTotalRecords.textContent = "0";
     elements.dashboardCriticalList.innerHTML = "<li>Sin datos</li>";
     return;
   }
@@ -825,6 +828,7 @@ function renderReports(records) {
   const summary = buildReportSummary(records);
 
   elements.reportTotalRecords.textContent = String(summary.totalRecords);
+  if (elements.dashboardTotalRecords) elements.dashboardTotalRecords.textContent = String(summary.totalRecords);
   elements.reportOverallAverage.textContent = formatPercent(summary.average);
   elements.reportBestPercent.textContent = summary.best ? formatPercent(summary.best.valor) : "0%";
   elements.reportBestDetail.textContent = summary.best ? `${summary.best.nombre} (${formatDate(summary.best.fecha)})` : "Sin datos";
@@ -1032,11 +1036,14 @@ function renderCategoryAverageChart(stats) {
 }
 
 function renderCategoryBar(item) {
+  const height = Math.max(4, Math.min(100, item.average));
+  const status = getPerformanceStatus(item.average);
+
   return `
-    <div class="bar-row" title="${escapeHtml(item.label)} | Promedio: ${formatPercent(item.average)} | Registros: ${item.count}">
-      <span>${escapeHtml(item.label)}</span>
-      <div class="bar-track"><div class="bar-fill performance-${getPerformanceStatus(item.average)}" style="width: ${Math.max(4, item.average)}%"></div></div>
-      <strong class="stat-value performance-${getPerformanceStatus(item.average)}">${formatPercent(item.average)}</strong>
+    <div class="bar-column" title="${escapeHtml(item.label)} | Promedio: ${formatPercent(item.average)} | Registros: ${item.count}">
+      <strong class="bar-value stat-value performance-${status}">${formatPercent(item.average)}</strong>
+      <div class="vertical-track"><div class="vertical-fill performance-${status}" style="height: ${height}%"></div></div>
+      <span class="bar-label">${escapeHtml(item.label)}</span>
     </div>
   `;
 }
@@ -1392,7 +1399,7 @@ function updateComputedState() {
   const previousAverage = previousRecord?.promedio;
 
   elements.formAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
-  elements.headerAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
+  if (elements.headerAverage) elements.headerAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
   elements.averageDelta.textContent = previousAverage !== undefined ? formatDelta(average - previousAverage) : "Sin dato";
   updateCategoryColors(values);
   renderCriticalList(values);
