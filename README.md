@@ -163,6 +163,12 @@ Correccion completa del sidebar en moviles: bajo 768px el menu queda oculto fuer
 
 Se elimina el listado duplicado de estadistica por categoria debajo de Reportes. La seccion queda enfocada en los graficos principales y mantiene solo la estadistica mensual cuando existen datos disponibles.
 
+## Version 2.2.7
+
+Se simplifica la pantalla `Nuevo registro` para concentrarla solo en la carga diaria: fecha, nombre, turno, 11 categorias, observaciones y guardado.
+
+Se retiran de esa pantalla los indicadores y acciones duplicadas como estado de Firebase, cierre de sesion, panel lateral de criticas, historial, filtros y WhatsApp. El historial, filtros y exportaciones se mantienen en su seccion dedicada del menu sin cambios de logica.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

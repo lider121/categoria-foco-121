@@ -61,6 +61,7 @@ const elements = {
   formMessage: document.querySelector("#formMessage"),
   headerAverage: document.querySelector("#headerAverage"),
   historyList: document.querySelector("#historyList"),
+  historyPanel: document.querySelector("#historyPanel"),
   historySearchInput: document.querySelector("#historySearchInput"),
   loginButton: document.querySelector("#loginButton"),
   loginForm: document.querySelector("#loginForm"),
@@ -133,10 +134,10 @@ function bindEvents() {
   elements.form.addEventListener("input", updateComputedState);
   elements.form.addEventListener("submit", saveRecord);
   elements.loginForm.addEventListener("submit", signIn);
-  elements.logoutButton.addEventListener("click", signOut);
+  elements.logoutButton?.addEventListener("click", signOut);
   elements.nameSelect.addEventListener("change", handleNameChange);
   elements.dateInput.addEventListener("change", handleDateChange);
-  elements.cancelEditButton.addEventListener("click", cancelEditing);
+  elements.cancelEditButton?.addEventListener("click", cancelEditing);
   elements.exportButton.addEventListener("click", exportRecords);
   elements.exportJsonButton.addEventListener("click", exportJsonRecords);
   elements.filterCategory.addEventListener("change", applyHistoryFilters);
@@ -154,7 +155,7 @@ function bindEvents() {
   elements.sidebarOverlay.addEventListener("click", closeSidebar);
   elements.sidebarToggle.addEventListener("click", toggleSidebar);
   window.addEventListener("resize", handleSidebarResize);
-  elements.whatsappButton.addEventListener("click", showWhatsappMessage);
+  elements.whatsappButton?.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
 }
 
@@ -209,7 +210,7 @@ function handleReportNavAction(event) {
   } else if (action === "new") {
     elements.formPanel.scrollIntoView(scrollOptions);
   } else if (action === "history") {
-    elements.historyList.scrollIntoView(scrollOptions);
+    (elements.historyPanel || elements.historyList).scrollIntoView(scrollOptions);
   } else if (action === "reports") {
     elements.reportsPanel.scrollIntoView(scrollOptions);
   } else if (action === "whatsapp") {
@@ -451,16 +452,18 @@ function setAuthUi(isAuthenticated) {
 
   if (isAuthenticated) {
     const fallbackName = currentUser?.displayName || currentUser?.email || "Usuario autenticado";
-    elements.sessionUser.textContent = currentUserProfile?.name || fallbackName;
-    elements.sessionRole.textContent = currentUserProfile?.missingRole
-      ? `${getRoleLabel()} (rol por defecto)`
-      : getRoleLabel();
+    if (elements.sessionUser) elements.sessionUser.textContent = currentUserProfile?.name || fallbackName;
+    if (elements.sessionRole) {
+      elements.sessionRole.textContent = currentUserProfile?.missingRole
+        ? `${getRoleLabel()} (rol por defecto)`
+        : getRoleLabel();
+    }
     updateReportsUserCard();
     return;
   }
 
-  elements.sessionUser.textContent = "Sin sesion";
-  elements.sessionRole.textContent = "Rol pendiente";
+  if (elements.sessionUser) elements.sessionUser.textContent = "Sin sesion";
+  if (elements.sessionRole) elements.sessionRole.textContent = "Rol pendiente";
   updateReportsUserCard();
 }
 
@@ -555,7 +558,7 @@ function canViewReports() {
 function updateRoleUi() {
   const canEdit = canEditRecords();
   elements.reportsPanel.classList.toggle("hidden", !canViewReports());
-  elements.roleNotice.classList.toggle("hidden", canEdit);
+  elements.roleNotice?.classList.toggle("hidden", canEdit);
   elements.historyList.querySelectorAll("[data-edit-date]").forEach((button) => {
     button.disabled = !canEdit;
     button.title = canEdit ? "Abrir registro para editar" : "Solo supervisor o administrador puede editar registros";
@@ -770,7 +773,7 @@ function setEditMode(fecha) {
 
   elements.dateInput.disabled = isEditing;
   elements.editStatus.classList.toggle("hidden", !isEditing);
-  elements.cancelEditButton.classList.toggle("hidden", !isEditing);
+  elements.cancelEditButton?.classList.toggle("hidden", !isEditing);
   elements.formPanel.classList.toggle("editing", isEditing);
   elements.saveButton.textContent = isEditing ? "Actualizar registro" : "Guardar registro";
   elements.editStatus.textContent = isEditing ? `Editando registro del ${formatDate(fecha)}` : "";
@@ -1418,14 +1421,18 @@ function updateComputedState() {
   const hasCompleteValues = values.every((item) => !Number.isNaN(item.valor));
   const previousAverage = previousRecord?.promedio;
 
-  elements.formAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
+  if (elements.formAverage) elements.formAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
   if (elements.headerAverage) elements.headerAverage.textContent = hasCompleteValues ? formatPercent(average) : "0%";
-  elements.averageDelta.textContent = previousAverage !== undefined ? formatDelta(average - previousAverage) : "Sin dato";
+  if (elements.averageDelta) {
+    elements.averageDelta.textContent = previousAverage !== undefined ? formatDelta(average - previousAverage) : "Sin dato";
+  }
   updateCategoryColors(values);
   renderCriticalList(values);
 }
 
 function renderCriticalList(values) {
+  if (!elements.criticalList) return;
+
   const validValues = values.filter((item) => !Number.isNaN(item.valor));
   const critical = validValues.sort((a, b) => a.valor - b.valor).slice(0, 3);
 
@@ -1805,6 +1812,8 @@ function formatDelta(value, emptyText = "Sin dato") {
 }
 
 function setStatus(text, type) {
+  if (!elements.connectionStatus) return;
+
   elements.connectionStatus.textContent = text;
   elements.connectionStatus.className = `status-badge ${type}`;
 }

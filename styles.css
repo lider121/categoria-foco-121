@@ -3541,6 +3541,172 @@ body {
   }
 }
 
+/* v2.2.7 simplified new record screen */
+.app-shell {
+  display: block;
+  width: min(100%, 1180px);
+  max-width: 1180px;
+  margin: 0 auto 24px;
+  padding: 0 18px;
+}
+
+.form-panel {
+  width: 100%;
+  border-radius: 16px;
+  padding: clamp(24px, 3vw, 38px);
+}
+
+.new-record-heading {
+  align-items: flex-start;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5eaf2;
+}
+
+.new-record-heading h2 {
+  margin: 0;
+  color: #0f1f3d;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.02;
+}
+
+.section-subtitle {
+  margin: 8px 0 0;
+  color: #5f6f89;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.form-panel .form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.form-panel label {
+  min-width: 0;
+}
+
+.form-panel input,
+.form-panel select,
+.form-panel textarea {
+  min-height: 48px;
+  border-radius: 10px;
+}
+
+.form-panel textarea {
+  min-height: 124px;
+}
+
+.form-panel .categories-header {
+  margin: 30px 0 14px;
+  padding-top: 22px;
+  border-top: 1px solid #e5eaf2;
+}
+
+.form-panel .categories-header h3 {
+  font-size: 20px;
+}
+
+.form-panel .categories-grid {
+  gap: 14px;
+}
+
+.form-panel .category-card {
+  min-height: 78px;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.form-panel .category-card input {
+  min-height: 44px;
+}
+
+.form-panel .observations-label {
+  margin-top: 24px;
+}
+
+.actions.single-action {
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5eaf2;
+}
+
+.actions.single-action .primary-button {
+  min-width: 190px;
+}
+
+.history-panel {
+  width: min(100%, 1180px);
+  max-width: 1180px;
+  margin: 0 auto 30px;
+  padding: 22px;
+  border-radius: 16px;
+}
+
+.history-panel .section-heading {
+  margin-bottom: 18px;
+}
+
+.history-panel .filters-box {
+  margin-top: 0;
+}
+
+@media (max-width: 1080px) {
+  .form-panel .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell {
+    width: 100%;
+    margin-bottom: 18px;
+    padding: 0;
+  }
+
+  .form-panel {
+    border-radius: 14px;
+    padding: 20px 16px;
+  }
+
+  .new-record-heading {
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+  }
+
+  .new-record-heading h2 {
+    font-size: 32px;
+  }
+
+  .form-panel .form-grid,
+  .form-panel .categories-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-panel .category-card {
+    grid-template-columns: minmax(0, 1fr) 88px;
+    padding: 12px;
+  }
+
+  .actions.single-action {
+    justify-content: stretch;
+  }
+
+  .actions.single-action .primary-button,
+  .actions.single-action .secondary-button {
+    width: 100%;
+  }
+
+  .history-panel {
+    width: 100%;
+    margin: 0 0 22px;
+    padding: 18px 14px;
+    border-radius: 14px;
+  }
+}
+
 @media print {
   .reports-sidebar,
   .sidebar-overlay,
@@ -3548,6 +3714,7 @@ body {
   .app-header,
   .dashboard-panel,
   .app-shell,
+  .history-panel,
   .report-filters,
   #reportsMessage {
     display: none !important;

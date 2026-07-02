@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.2.6" />
+    <link rel="stylesheet" href="styles.css?v=2.2.7" />
   </head>
   <body class="auth-loading">
     <section id="loginView" class="auth-panel" aria-labelledby="loginTitle">
@@ -61,7 +61,7 @@
 
           <div class="reports-sidebar-foot">
             <strong>FOCO 121</strong>
-            <small>v2.2.6</small>
+            <small>v2.2.7</small>
           </div>
       </aside>
 
@@ -174,26 +174,16 @@
 
     <div class="app-shell">
       <section class="panel form-panel" aria-labelledby="dailyTitle">
-        <div class="section-heading">
+        <div class="section-heading new-record-heading">
           <div>
             <p class="eyebrow">Evaluación diaria</p>
-            <h2 id="dailyTitle">Registro Diario</h2>
+            <h2 id="dailyTitle">Nuevo registro</h2>
+            <p class="section-subtitle">Completa la evaluación diaria de la tienda 121.</p>
           </div>
-          <div id="connectionStatus" class="status-badge pending">Firebase pendiente</div>
         </div>
 
         <div id="editStatus" class="edit-status hidden" role="status">
           Editando registro existente
-        </div>
-
-        <div class="role-box session-box">
-          <div class="session-user">
-            <span>Usuario autenticado</span>
-            <strong id="sessionUser">Sin sesion</strong>
-            <small id="sessionRole">Rol pendiente</small>
-          </div>
-          <button id="logoutButton" class="secondary-button" type="button">Cerrar sesion</button>
-          <p id="roleNotice">Solo supervisor o administrador puede editar registros.</p>
         </div>
 
         <form id="evaluationForm" novalidate>
@@ -243,39 +233,23 @@
             <textarea id="observationsInput" name="observaciones" rows="4" placeholder="Comentarios relevantes del día"></textarea>
           </label>
 
-          <div class="summary-bar">
-            <div>
-              <span>Promedio automático</span>
-              <strong id="formAverage">0%</strong>
-            </div>
-            <div>
-              <span>Vs ayer</span>
-              <strong id="averageDelta">Sin dato</strong>
-            </div>
-          </div>
-
-          <div class="actions">
+          <div class="actions single-action">
             <button id="saveButton" class="primary-button" type="submit">Guardar registro</button>
             <button id="cancelEditButton" class="secondary-button hidden" type="button">Cancelar edición</button>
-            <button id="whatsappButton" class="secondary-button" type="button">Generar WhatsApp</button>
           </div>
 
           <p id="formMessage" class="form-message" role="status"></p>
         </form>
       </section>
+    </div>
 
-      <aside class="panel side-panel" aria-labelledby="historyTitle">
+    <section id="historyPanel" class="panel history-panel" aria-labelledby="historyTitle">
         <div class="section-heading compact">
           <div>
             <p class="eyebrow">Seguimiento</p>
             <h2 id="historyTitle">Historial</h2>
           </div>
           <button id="refreshButton" class="icon-button" type="button" title="Actualizar historial" aria-label="Actualizar historial">↻</button>
-        </div>
-
-        <div class="critical-box">
-          <span>Top 3 críticas</span>
-          <ol id="criticalList"></ol>
         </div>
 
         <div class="filters-box" aria-label="Filtros de historial">
@@ -325,8 +299,7 @@
         </div>
 
         <div id="historyList" class="history-list"></div>
-      </aside>
-    </div>
+    </section>
 
     <dialog id="whatsappDialog">
       <form method="dialog">
@@ -348,6 +321,6 @@
     <script>
       window.addEventListener("DOMContentLoaded", () => window.lucide?.createIcons());
     </script>
-    <script type="module" src="app.js?v=2.2.6"></script>
+    <script type="module" src="app.js?v=2.2.7"></script>
   </body>
 </html>
