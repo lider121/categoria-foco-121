@@ -3349,6 +3349,188 @@ body {
   }
 }
 
+@media (max-width: 767px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .app-view,
+  .app-view.sidebar-collapsed,
+  .app-view.sidebar-open {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .reports-sidebar,
+  .app-view.sidebar-collapsed .reports-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 50;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    width: min(280px, calc(100vw - 28px));
+    max-width: min(280px, calc(100vw - 28px));
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 22px 14px 18px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #ffffff;
+    border-right: 1px solid #dfe6f0;
+    box-shadow: 18px 0 42px rgba(15, 31, 61, 0.22);
+    transform: translateX(-105%);
+    transition: transform 250ms ease;
+    will-change: transform;
+  }
+
+  .app-view.sidebar-open .reports-sidebar {
+    transform: translateX(0);
+  }
+
+  .app-view.sidebar-collapsed .reports-brand,
+  .reports-brand {
+    display: flex;
+    justify-content: flex-start;
+    gap: 12px;
+    min-width: 0;
+    padding: 0 8px 20px;
+  }
+
+  .app-view.sidebar-collapsed .reports-brand strong,
+  .app-view.sidebar-collapsed .reports-user-card div,
+  .app-view.sidebar-collapsed .reports-sidebar-foot {
+    display: block;
+  }
+
+  .reports-brand strong {
+    min-width: 0;
+    overflow: visible;
+    white-space: nowrap;
+  }
+
+  .brand-mark {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .reports-user-card,
+  .app-view.sidebar-collapsed .reports-user-card {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    margin: 0 -14px 18px;
+    padding: 16px 20px;
+    border-top: 1px solid #eef2f7;
+    border-bottom: 1px solid #eef2f7;
+  }
+
+  .app-view.sidebar-collapsed .reports-avatar,
+  .reports-avatar {
+    margin: 0;
+  }
+
+  .reports-user-card strong,
+  .reports-user-card small {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .reports-nav {
+    gap: 8px;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .reports-nav button,
+  .app-view.sidebar-collapsed .reports-nav button {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    justify-items: stretch;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: #243858;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .reports-nav button svg,
+  .reports-nav button i {
+    width: 18px;
+    height: 18px;
+  }
+
+  .reports-sidebar-foot {
+    padding: 18px 8px 0;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    display: block;
+    pointer-events: none;
+    background: rgba(7, 18, 38, 0);
+    opacity: 0;
+    transition: opacity 250ms ease, background-color 250ms ease;
+  }
+
+  .app-view.sidebar-open .sidebar-overlay {
+    pointer-events: auto;
+    background: rgba(7, 18, 38, 0.52);
+    opacity: 1;
+  }
+
+  .sidebar-toggle {
+    position: sticky;
+    top: 10px;
+    z-index: 60;
+    width: 44px;
+    height: 44px;
+    margin: 0 0 14px;
+  }
+
+  .app-main,
+  .app-view.sidebar-collapsed .app-main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 12px 14px 18px;
+    overflow-x: hidden;
+  }
+
+  .dashboard-panel,
+  .reports-panel,
+  .app-shell,
+  .panel,
+  .dashboard-card,
+  .report-block {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dashboard-grid,
+  .reports-grid,
+  .reports-panel .reports-grid,
+  .stats-source {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-x: visible;
+  }
+}
+
 @media print {
   .reports-sidebar,
   .sidebar-overlay,

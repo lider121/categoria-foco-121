@@ -14,6 +14,7 @@ const ROLES_COLLECTION = "roles";
 const HISTORY_LIMIT = 200;
 const DEFAULT_ROLE = "user";
 const SIDEBAR_STORAGE_KEY = "categoriaFocoSidebarCollapsed";
+const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
 
 const categories = [
   { code: "82", name: "Check-Out" },
@@ -152,11 +153,17 @@ function bindEvents() {
   elements.reportsNav.addEventListener("click", handleReportNavAction);
   elements.sidebarOverlay.addEventListener("click", closeSidebar);
   elements.sidebarToggle.addEventListener("click", toggleSidebar);
+  window.addEventListener("resize", handleSidebarResize);
   elements.whatsappButton.addEventListener("click", showWhatsappMessage);
   elements.copyButton.addEventListener("click", copyWhatsappMessage);
 }
 
 function initSidebarState() {
+  if (isMobileSidebar()) {
+    setSidebarCollapsed(true);
+    return;
+  }
+
   const storedState = localStorage.getItem(SIDEBAR_STORAGE_KEY);
   const isCollapsed = storedState === null
     ? window.matchMedia("(max-width: 980px)").matches
@@ -176,7 +183,18 @@ function setSidebarCollapsed(isCollapsed) {
   elements.appView.classList.toggle("sidebar-collapsed", isCollapsed);
   elements.appView.classList.toggle("sidebar-open", !isCollapsed);
   elements.sidebarToggle.setAttribute("aria-expanded", String(!isCollapsed));
+  elements.sidebarOverlay.setAttribute("aria-hidden", String(isCollapsed));
   localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
+}
+
+function isMobileSidebar() {
+  return window.matchMedia(MOBILE_SIDEBAR_QUERY).matches;
+}
+
+function handleSidebarResize() {
+  if (isMobileSidebar() && elements.appView.classList.contains("sidebar-open")) {
+    closeSidebar();
+  }
 }
 
 function handleReportNavAction(event) {
@@ -206,7 +224,7 @@ function handleReportNavAction(event) {
     setReportsMessage("Funcion preparada para una version futura.", "info");
   }
 
-  if (window.matchMedia("(max-width: 980px)").matches) {
+  if (isMobileSidebar()) {
     closeSidebar();
   }
 }

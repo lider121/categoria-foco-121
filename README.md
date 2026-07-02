@@ -155,6 +155,10 @@ Ajuste visual final del dashboard y reportes: se mantiene el tema claro, menu la
 
 Reportes queda enfocado en graficos: se eliminan KPIs repetidos y la estadistica por usuario creador, la evolucion por fecha queda como barras de promedio diario y el promedio por categoria queda como barras horizontales por desempeno. Se agrega boton para exportar el reporte a PDF mediante impresion del navegador.
 
+## Version 2.2.5
+
+Correccion completa del sidebar en moviles: bajo 768px el menu queda oculto fuera del flujo, se abre como panel lateral de 280px con overlay oscuro, se cierra al tocar fuera o seleccionar una opcion y evita scroll horizontal o contenido debajo del menu.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.
