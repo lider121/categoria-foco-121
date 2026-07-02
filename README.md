@@ -169,6 +169,10 @@ Se simplifica la pantalla `Nuevo registro` para concentrarla solo en la carga di
 
 Se retiran de esa pantalla los indicadores y acciones duplicadas como estado de Firebase, cierre de sesion, panel lateral de criticas, historial, filtros y WhatsApp. El historial, filtros y exportaciones se mantienen en su seccion dedicada del menu sin cambios de logica.
 
+## Version 2.2.8
+
+Se corrige el grafico `Promedio por categoria` para hacerlo responsive: en escritorio mantiene barras horizontales con nombres completos y en moviles cambia a barras verticales con etiquetas abreviadas, porcentajes superiores, colores por desempeno y sin scroll horizontal.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

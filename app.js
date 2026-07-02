@@ -1061,14 +1061,35 @@ function renderCategoryAverageChart(stats) {
 function renderCategoryBar(item) {
   const width = Math.max(4, Math.min(100, item.average));
   const status = getPerformanceStatus(item.average);
+  const tooltip = `${item.label} | Promedio: ${formatPercent(item.average)} | Registros: ${item.count}`;
 
   return `
-    <div class="bar-row" title="${escapeHtml(item.label)} | Promedio: ${formatPercent(item.average)} | Registros: ${item.count}">
-      <span>${escapeHtml(item.label)}</span>
-      <div class="bar-track"><div class="bar-fill performance-${status}" style="width: ${width}%"></div></div>
+    <div class="category-bar" style="--bar-value: ${width};" title="${escapeHtml(tooltip)}">
+      <span class="category-bar-label" data-mobile-label="${escapeHtml(getMobileCategoryLabel(item.label))}">${escapeHtml(item.label)}</span>
+      <div class="category-bar-track">
+        <div class="category-bar-fill performance-${status}"></div>
+      </div>
       <strong class="stat-value performance-${status}">${formatPercent(item.average)}</strong>
     </div>
   `;
+}
+
+function getMobileCategoryLabel(label) {
+  const [code, ...nameParts] = String(label || "").split(" - ");
+  const name = nameParts.length ? nameParts.join(" - ") : String(label || "");
+  const normalizedName = normalizeSearchText(name);
+  let shortName = name;
+
+  if (normalizedName.includes("bebidas")) shortName = "Bebidas Cafe";
+  if (normalizedName.includes("articulos")) shortName = "Art. Hogar";
+  if (normalizedName.includes("automotriz")) shortName = "Auto";
+  if (normalizedName.includes("cocina")) shortName = "Cocina/Bano";
+  if (normalizedName.includes("electrodomesticos")) shortName = "Electro.";
+  if (normalizedName.includes("descartables")) shortName = "Descart. Cumple.";
+  if (normalizedName.includes("ropa")) shortName = "Ropa Cama";
+  if (normalizedName.includes("telefono")) shortName = "Telefono";
+
+  return nameParts.length ? `${code} ${shortName}` : shortName;
 }
 
 function renderStatsList(container, stats, renderItem, emptyText) {
