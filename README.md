@@ -173,6 +173,12 @@ Se retiran de esa pantalla los indicadores y acciones duplicadas como estado de 
 
 Se corrige el grafico `Promedio por categoria` para hacerlo responsive: en escritorio mantiene barras horizontales con nombres completos y en moviles cambia a barras verticales con etiquetas abreviadas, porcentajes superiores, colores por desempeno y sin scroll horizontal.
 
+## Version 2.2.9
+
+Limpieza visual general de la interfaz. Se mantiene el dashboard con cuatro indicadores clave, el registro diario queda enfocado en el formulario, el historial muestra inicialmente 10 registros con boton `Cargar mas`, y cada registro se presenta como una tarjeta compacta con acciones alineadas.
+
+Reportes queda limitado a dos graficos principales y dos tablas: estadistica por categoria y estadistica por mes. Se refuerzan estilos responsive, botones, formularios, hover de tarjetas, transiciones suaves y prevencion de scroll horizontal en moviles.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.

@@ -12,6 +12,7 @@ const COLLECTION_NAME = "registros";
 const DELETED_LOGS_COLLECTION = "deletedLogs";
 const ROLES_COLLECTION = "roles";
 const HISTORY_LIMIT = 200;
+const HISTORY_PAGE_SIZE = 10;
 const DEFAULT_ROLE = "user";
 const SIDEBAR_STORAGE_KEY = "categoriaFocoSidebarCollapsed";
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
@@ -63,6 +64,7 @@ const elements = {
   historyList: document.querySelector("#historyList"),
   historyPanel: document.querySelector("#historyPanel"),
   historySearchInput: document.querySelector("#historySearchInput"),
+  loadMoreHistoryButton: document.querySelector("#loadMoreHistoryButton"),
   loginButton: document.querySelector("#loginButton"),
   loginForm: document.querySelector("#loginForm"),
   loginMessage: document.querySelector("#loginMessage"),
@@ -73,6 +75,7 @@ const elements = {
   openWhatsappLink: document.querySelector("#openWhatsappLink"),
   passwordInput: document.querySelector("#passwordInput"),
   categoryAverageChart: document.querySelector("#categoryAverageChart"),
+  categoryStatsList: document.querySelector("#categoryStatsList"),
   dateTrendChart: document.querySelector("#dateTrendChart"),
   exportReportPdfButton: document.querySelector("#exportReportPdfButton"),
   refreshButton: document.querySelector("#refreshButton"),
@@ -116,6 +119,7 @@ let editingRecordDate = null;
 let firestoreApi = null;
 let historyRecords = [];
 let visibleHistoryRecords = [];
+let historyVisibleLimit = HISTORY_PAGE_SIZE;
 
 init();
 
@@ -146,6 +150,7 @@ function bindEvents() {
   elements.filterDateTo.addEventListener("change", loadHistory);
   elements.historySearchInput.addEventListener("input", applyHistoryFilters);
   elements.clearFiltersButton.addEventListener("click", clearHistoryFilters);
+  elements.loadMoreHistoryButton?.addEventListener("click", loadMoreHistory);
   elements.refreshButton.addEventListener("click", refreshSummary);
   elements.refreshReportsButton.addEventListener("click", loadReports);
   elements.exportReportPdfButton?.addEventListener("click", exportReportPdf);
@@ -434,12 +439,14 @@ function resetAuthenticatedState() {
   currentRecord = null;
   historyRecords = [];
   visibleHistoryRecords = [];
+  historyVisibleLimit = HISTORY_PAGE_SIZE;
   setEditMode(null);
   clearFormValues(true);
   renderDashboard(null, null);
   renderReports([]);
   elements.reportsPanel.classList.add("hidden");
   elements.historyList.innerHTML = `<p class="form-message">Inicia sesion para ver el historial.</p>`;
+  elements.loadMoreHistoryButton?.classList.add("hidden");
   updateResultsCount(0);
 }
 
@@ -614,6 +621,7 @@ async function loadHistory() {
   } catch (error) {
     console.error(error);
     elements.historyList.innerHTML = `<p class="form-message">No se pudo cargar el historial: ${escapeHtml(getFirestoreErrorMessage(error))}</p>`;
+    elements.loadMoreHistoryButton?.classList.add("hidden");
     updateResultsCount(0);
   }
 }
@@ -633,15 +641,23 @@ function buildHistoryQuery() {
 }
 
 function applyHistoryFilters() {
+  historyVisibleLimit = HISTORY_PAGE_SIZE;
   visibleHistoryRecords = historyRecords.filter(matchesHistoryFilters);
   renderHistory(visibleHistoryRecords);
 }
 
 function renderHistory(records) {
-  elements.historyList.innerHTML = records.length
-    ? records.map(renderHistoryItem).join("")
+  const visibleRecords = records.slice(0, historyVisibleLimit);
+
+  elements.historyList.innerHTML = visibleRecords.length
+    ? visibleRecords.map(renderHistoryItem).join("")
     : `<p class="form-message">Sin registros para los filtros seleccionados.</p>`;
 
+  elements.historyList.querySelectorAll("button[data-view-date]").forEach((button) => {
+    button.addEventListener("click", () => {
+      viewHistoryRecord(button.dataset.viewDate);
+    });
+  });
   elements.historyList.querySelectorAll("button[data-edit-date]").forEach((button) => {
     button.addEventListener("click", () => {
       startEditingRecord(button.dataset.editDate);
@@ -652,14 +668,56 @@ function renderHistory(records) {
       deleteRecord(button.dataset.deleteDate);
     });
   });
-  updateResultsCount(records.length);
+  updateResultsCount(records.length, visibleRecords.length);
+  updateLoadMoreButton(records.length, visibleRecords.length);
   updateRoleUi();
+}
+
+function loadMoreHistory() {
+  historyVisibleLimit += HISTORY_PAGE_SIZE;
+  renderHistory(visibleHistoryRecords);
+}
+
+function updateLoadMoreButton(total, visible) {
+  if (!elements.loadMoreHistoryButton) return;
+
+  const remaining = Math.max(0, total - visible);
+  elements.loadMoreHistoryButton.classList.toggle("hidden", remaining === 0);
+  if (!remaining) return;
+
+  const nextAmount = Math.min(HISTORY_PAGE_SIZE, remaining);
+  const label = nextAmount === 1 ? "registro" : "registros";
+  elements.loadMoreHistoryButton.textContent = `Cargar ${nextAmount} ${label} más`;
 }
 
 async function refreshSummary() {
   await loadHistory();
   await loadDashboard();
   await loadReports();
+}
+
+async function viewHistoryRecord(fecha) {
+  if (!db) return;
+  if (!requireAuthentication()) return;
+
+  try {
+    const record = await getRecordByDate(fecha);
+    if (!record) {
+      setMessage("No se encontrÃ³ el registro seleccionado.", "error");
+      return;
+    }
+
+    currentRecord = record;
+    fillForm(record);
+    await loadPreviousRecord(record.fecha);
+    setEditMode(null);
+    updateComputedState();
+    setMessage("Registro cargado para revisiÃ³n. Para modificarlo usa Editar si tu rol lo permite.", "info");
+    elements.formPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    console.error(error);
+    setMessage(`No se pudo abrir el registro: ${getFirestoreErrorMessage(error)}`, "error");
+  }
 }
 
 async function startEditingRecord(fecha) {
@@ -903,8 +961,13 @@ function renderReports(records) {
 
   renderDateTrendChart(summary.byDate);
   renderCategoryAverageChart(summary.byCategory);
+  const hasCategoryStats = summary.byCategory.some((item) => item.count > 0);
   const hasMonthStats = summary.byMonth.some((item) => item.count > 0);
-  elements.statsSource?.classList.toggle("hidden", !hasMonthStats);
+  elements.statsSource?.classList.toggle("hidden", !hasCategoryStats && !hasMonthStats);
+  if (hasCategoryStats && elements.categoryStatsList) {
+    const sortedCategories = summary.byCategory.slice().sort((a, b) => b.average - a.average);
+    renderStatsList(elements.categoryStatsList, sortedCategories, renderGroupedStatItem, "Sin categorias");
+  }
   if (hasMonthStats) {
     renderStatsList(elements.monthStatsList, summary.byMonth, renderGroupedStatItem, "Sin meses");
   }
@@ -1589,9 +1652,11 @@ function normalizeSearchText(value) {
     .trim();
 }
 
-function updateResultsCount(count) {
+function updateResultsCount(count, visible = count) {
   const label = count === 1 ? "resultado" : "resultados";
-  elements.resultsCount.textContent = `${count} ${label}`;
+  elements.resultsCount.textContent = visible < count
+    ? `Mostrando ${visible} de ${count} ${label}`
+    : `${count} ${label}`;
 }
 
 async function clearHistoryFilters() {
@@ -1615,16 +1680,16 @@ function renderHistoryItem(record) {
   const deleteHidden = canDeleteRecords() ? "" : " hidden";
   return `
     <article class="history-item">
-      <div class="history-row">
-        <div>
-          <span>${date}<br />${nombre} · ${turno}</span>
-          ${categoryLine}
-          <strong>${formatPercent(record.promedio)}</strong>
-        </div>
-        <div class="history-actions">
-          <button class="history-edit-button" type="button" data-edit-date="${escapeHtml(record.fecha)}"${disabled}>Ver / Editar</button>
-          <button class="history-delete-button${deleteHidden}" type="button" data-delete-date="${escapeHtml(record.fecha)}">Eliminar</button>
-        </div>
+      <div class="history-main">
+        <strong class="history-date">${date}</strong>
+        <span class="history-meta">${nombre} • ${turno}</span>
+        ${categoryLine}
+      </div>
+      <strong class="history-score">${formatPercent(record.promedio)}</strong>
+      <div class="history-actions">
+        <button class="history-view-button" type="button" data-view-date="${escapeHtml(record.fecha)}">Ver</button>
+        <button class="history-edit-button" type="button" data-edit-date="${escapeHtml(record.fecha)}"${disabled}>Editar</button>
+        <button class="history-delete-button${deleteHidden}" type="button" data-delete-date="${escapeHtml(record.fecha)}">Eliminar</button>
       </div>
     </article>
   `;
