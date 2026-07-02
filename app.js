@@ -72,7 +72,6 @@ const elements = {
   openWhatsappLink: document.querySelector("#openWhatsappLink"),
   passwordInput: document.querySelector("#passwordInput"),
   categoryAverageChart: document.querySelector("#categoryAverageChart"),
-  categoryStatsList: document.querySelector("#categoryStatsList"),
   dateTrendChart: document.querySelector("#dateTrendChart"),
   exportReportPdfButton: document.querySelector("#exportReportPdfButton"),
   refreshButton: document.querySelector("#refreshButton"),
@@ -95,6 +94,7 @@ const elements = {
   shiftSelect: document.querySelector("#shiftSelect"),
   sidebarOverlay: document.querySelector("#sidebarOverlay"),
   sidebarToggle: document.querySelector("#sidebarToggle"),
+  statsSource: document.querySelector(".stats-source"),
   monthStatsList: document.querySelector("#monthStatsList"),
   whatsappButton: document.querySelector("#whatsappButton"),
   whatsappDialog: document.querySelector("#whatsappDialog"),
@@ -900,8 +900,11 @@ function renderReports(records) {
 
   renderDateTrendChart(summary.byDate);
   renderCategoryAverageChart(summary.byCategory);
-  renderStatsList(elements.categoryStatsList, summary.byCategory, renderCategoryStatItem, "Sin categorias");
-  renderStatsList(elements.monthStatsList, summary.byMonth, renderGroupedStatItem, "Sin meses");
+  const hasMonthStats = summary.byMonth.some((item) => item.count > 0);
+  elements.statsSource?.classList.toggle("hidden", !hasMonthStats);
+  if (hasMonthStats) {
+    renderStatsList(elements.monthStatsList, summary.byMonth, renderGroupedStatItem, "Sin meses");
+  }
 }
 
 function buildReportSummary(records) {
@@ -1070,16 +1073,6 @@ function renderStatsList(container, stats, renderItem, emptyText) {
   container.innerHTML = visibleStats.length
     ? visibleStats.map(renderItem).join("")
     : `<p class="empty-chart">${emptyText}</p>`;
-}
-
-function renderCategoryStatItem(item) {
-  return `
-    <div class="stats-row">
-      <span>${escapeHtml(item.label)}</span>
-      <strong class="stat-value performance-${getPerformanceStatus(item.average)}">${formatPercent(item.average)}</strong>
-      <small>${item.count} dato(s) | min ${formatPercent(item.min)} | max ${formatPercent(item.max)}</small>
-    </div>
-  `;
 }
 
 function renderGroupedStatItem(item) {

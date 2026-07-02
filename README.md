@@ -159,6 +159,10 @@ Reportes queda enfocado en graficos: se eliminan KPIs repetidos y la estadistica
 
 Correccion completa del sidebar en moviles: bajo 768px el menu queda oculto fuera del flujo, se abre como panel lateral de 280px con overlay oscuro, se cierra al tocar fuera o seleccionar una opcion y evita scroll horizontal o contenido debajo del menu.
 
+## Version 2.2.6
+
+Se elimina el listado duplicado de estadistica por categoria debajo de Reportes. La seccion queda enfocada en los graficos principales y mantiene solo la estadistica mensual cuando existen datos disponibles.
+
 ## Configurar Firebase
 
 1. Crea un proyecto en Firebase.
